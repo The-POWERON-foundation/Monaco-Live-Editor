@@ -1,6 +1,8 @@
 let editor; // Editor instance
 let users = {}; // Connected users
 let blockChange = false; // Block text change events
+let workspace = ""; // Workspace name
+let socket = io(); // Connect to the socket.io server
 
 /* Load Monaco Editor */
 require.config({
@@ -19,6 +21,7 @@ window.MonacoEnvironment = {
     }
 }
 
+/* User join event */
 function userJoin(user) {
     user.widget = {
         domNode: null,
@@ -69,6 +72,7 @@ function userJoin(user) {
     }
 }
 
+/* User changes selection */
 function changeSeleciton(userId, selection, secondarySelections) {
     try {
         let selectionArray = []; 
@@ -126,6 +130,37 @@ function changeSeleciton(userId, selection, secondarySelections) {
     } catch (e) {} // Handle invalid selection data
 }
 
+/* Join a workspace */
+function joinWorkspace() {
+    workspace = prompt("Enter file name: ");
+
+    const model = monaco.editor.createModel(
+        "", // Initial value
+        undefined, // Language
+        monaco.Uri.file(workspace) // File name -> automatically sets the language
+    );
+      
+    editor.setModel(model);
+
+    socket.emit("join", workspace); // Join the workspace
+
+    socket.on("error", (error) => {
+        alert(error); // Show error message
+    }); 
+
+    socket.on("workspace", (data) => {
+        document.getElementById("intro").style.display = "none"; // Hide the intro screen
+
+        blockChange = true; // Prevent text change events from triggering the socket.io event
+        editor.setValue(data.text); // Set the editor value
+
+        for (let userId in data.users) {
+            let user = data.users[userId];
+            userJoin(user);
+        };
+    });
+}
+
 /* Creates a new editor */
 require(["vs/editor/editor.main"], function () {
     monaco.editor.defineTheme('default', {
@@ -151,27 +186,10 @@ require(["vs/editor/editor.main"], function () {
     monaco.editor.setTheme('default'); 
 
     editor = monaco.editor.create(document.getElementById("editor"), {
-        value: "",
-        language: "javascript",
         fontSize: 15,
     }); 
 
-    let workspace = prompt("Enter file name: ");
-    let socket = io(); // Connect to the socket.io server
-
     socket.on("connected", () => {
-        socket.emit("join", workspace); // Join the workspace
-
-        socket.on("workspace", (data) => {
-            blockChange = true; // Prevent text change events from triggering the socket.io event
-            editor.setValue(data.text); // Set the editor value
-
-            for (let userId in data.users) {
-                let user = data.users[userId];
-                userJoin(user);
-            };
-        });
-
         socket.on("user-joined", (user) => {
             userJoin(user); // Add the new user to the editor
         });
@@ -212,3 +230,7 @@ require(["vs/editor/editor.main"], function () {
         socket.emit("text-change", e); // Send text change data to the server
     }); 
 }); 
+
+window.onresize = function (){
+    editor.layout();
+};

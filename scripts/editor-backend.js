@@ -7,13 +7,6 @@ let workspaces = {}; // Store the workspace data
 const SAVE_INTERVAL = 10000; // Save the workspace every 10 seconds
 const SHOW_LOG = true; // Show log messages
 
-/*const colors = [  
-    '#DDFFAA',
-    '#95E0C8',
-    '#E18060',
-    '#FFCBA4'
-]; // Highlight colors*/
-
 const colors = [  
     'rgba(255, 0, 0, opacity)',
     'rgba(255, 127, 0, opacity)',
@@ -29,6 +22,22 @@ const colors = [
     'rgba(0, 127, 255, opacity)',
 ]; // Highlight colors
 
+function isValidFilename(filename) {
+    if (!filename) return false; // Reject empty filenames
+    if (filename.length > 255) return false; // Reject filenames longer than 255 characters
+
+    const safePattern = /^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/; // Allow letters, numbers, -, _, and extensions
+    if (!safePattern.test(filename)) {
+        return false; // Reject filenames with special characters or spaces
+    }
+
+    // Normalize and check if the resolved path stays inside the allowed directory
+    const safeDirectory = path.resolve(path.join(__dirname, ".."), "files"); // Your designated directory
+    const resolvedPath = path.resolve(safeDirectory, filename);
+
+    return resolvedPath.startsWith(safeDirectory); // Prevent directory traversal
+}
+
 module.exports = function(io) {
     io.on("connection", (socket) => {
         if (SHOW_LOG) console.log(`User ${userId} connected`);
@@ -40,12 +49,26 @@ module.exports = function(io) {
         userId ++; // Increment the user ID 
 
         socket.on("join", (workspace) => {
-            if (SHOW_LOG) console.log(`User ${socket.variables.userId} joined workspace ${workspace}`);
+            /* Sanitize filename */
+            if (!isValidFilename(workspace)) { // If the workspace name is not valid
+                socket.emit("error", "Invalid workspace name"); // Send error message to the user
+                return; // Exit the function
+            }
+
+            let filename = path.join(__dirname, "..", "files", workspace); // Get the workspace file path
+
+            if (!fs.existsSync(filename)) { // If the workspace file does not exist
+                fs.writeFileSync(filename, ""); // Create the workspace file
+                if (SHOW_LOG) console.log(`User ${socket.variables.userId} created workspace ${workspace}`);
+            }
+            else {
+                if (SHOW_LOG) console.log(`User ${socket.variables.userId} joined workspace ${workspace}`);
+            }
 
             if (!workspaces[workspace]) { // If the workspace does not exist
                 workspaces[workspace] = {
                     users: {},
-                    text: fs.readFileSync(path.join(__dirname, "..", "files", workspace), "utf-8"), 
+                    text: fs.readFileSync(filename, "utf-8"), 
                     lastSave: Date.now()
                 }; // Create the workspace
             }

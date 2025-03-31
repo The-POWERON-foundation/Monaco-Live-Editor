@@ -42,10 +42,22 @@
             .selection {
                 padding-right: 7px !important;
             }
+
+            #intro {
+                width: 100%; 
+                height: 100%; 
+                
+                display: flex; 
+                align-items: center;
+                justify-content: center;
+            }
         </style>
     </head>
 
     <body>
+        <div id="intro">
+            <button onclick="joinWorkspace()">Join workspace</button>
+        </div>
         <div id="editor"></div>
         <script src="editor.js"></script>
     </body>
