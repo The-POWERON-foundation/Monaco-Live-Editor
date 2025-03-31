@@ -4,11 +4,26 @@ const path = require("path");
 let userId = 0; // Increment this for each new user
 let workspaces = {}; // Store the workspace data
 
-const colors = [  
+/*const colors = [  
     '#DDFFAA',
     '#95E0C8',
     '#E18060',
     '#FFCBA4'
+]; // Highlight colors*/
+
+const colors = [  
+    'rgba(255, 0, 0, opacity)',
+    'rgba(255, 127, 0, opacity)',
+    'rgba(255, 255, 0, opacity)',
+    'rgba(255, 0, 127, opacity)',
+    'rgba(255, 0, 255, opacity)',
+    'rgba(0, 255, 0, opacity)',
+    'rgba(127, 255, 0, opacity)',
+    'rgba(0, 255, 127, opacity)',
+    'rgba(0, 255, 255, opacity)',
+    'rgba(0, 0, 255, opacity)',
+    'rgba(127, 0, 255, opacity)',
+    'rgba(0, 127, 255, opacity)',
 ]; // Highlight colors
 
 module.exports = function(io) {
@@ -35,7 +50,8 @@ module.exports = function(io) {
             workspaces[workspace].users[socket.variables.userId] = {
                 id: socket.variables.userId, 
                 color: colors[Math.floor(Math.random() * colors.length)], 
-                selection: {}
+                selection: {}, 
+                secondarySelections: []  // Secondary selections for multi-cursor support
             }; // Add the user to the workspace
             socket.variables.workspace = workspace; // Store the workspace in the socket
 
@@ -45,6 +61,8 @@ module.exports = function(io) {
 
         socket.on("disconnect", () => {
             console.log(`User ${socket.variables.userId} disconnected`);
+
+            io.to(socket.variables.workspace).emit("user-left", socket.variables.userId); // Send the user-left event to all users in the workspace
 
             if (socket.variables.workspace) { // If the user is in a workspace
                 delete workspaces[socket.variables.workspace].users[socket.variables.userId]; // Delete the user from the workspace
@@ -57,10 +75,12 @@ module.exports = function(io) {
 
         socket.on("selection", (data) => {
             workspaces[socket.variables.workspace].users[socket.variables.userId].selection = data.selection; // Update the user's selection
-            
+            workspaces[socket.variables.workspace].users[socket.variables.userId].secondarySelections = data.secondarySelections; // Update the user's secondary selections
+
             io.to(socket.variables.workspace).except(socket.id).emit("selection", {
                 userId: socket.variables.userId,
-                selection: workspaces[socket.variables.workspace].users[socket.variables.userId].selection
+                selection: workspaces[socket.variables.workspace].users[socket.variables.userId].selection, 
+                secondarySelections: workspaces[socket.variables.workspace].users[socket.variables.userId].secondarySelections
             }); // Send the selection update to all users in the workspace
         }); 
     }); 
