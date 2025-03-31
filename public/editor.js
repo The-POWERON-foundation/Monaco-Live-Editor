@@ -1,6 +1,5 @@
-let editor;
-let decorations = {}; 
-let contentWidgets = {};
+let editor; // Editor instance
+let users = {}; // Connected users
 
 /* Load Monaco Editor */
 require.config({
@@ -19,39 +18,24 @@ window.MonacoEnvironment = {
     }
 }
 
-/* Insert CSS rules for a new user's cursor and selection */
-function insertCSS(id, color) {
-    let style = document.createElement('style'); 
-    style.innerHTML += `.${id} { background-color: ${color} }\n` // Selection design
-    style.innerHTML += `
-        .${id}one { 
-            background: ${color};
-            width:2px !important 
-        }
-    `; // Cursor design
+function userJoin(user) {
+    console.log(user); 
 
-    document.getElementsByTagName('head')[0].appendChild(style); 
-}
-
-/* Inserts a new cursor */
-function insertWidget(e) {
-    contentWidgets[e.id] = {
+    user.widget = {
         domNode: null,
         position: {
-            lineNumber: 0,
-            column: 0
+            lineNumber: user.selection.endLineNumber || 0,
+            column: user.selection.endColumn || 0
         },
         getId: function () {
-            return 'content.' + e.id
+            return 'content.' + user.id
         },
         getDomNode: function () {
             if (!this.domNode) {
                 this.domNode = document.createElement('div')
-                this.domNode.innerHTML = e.id
-                this.domNode.style.background = e.color
-                this.domNode.style.color = 'black'
-                this.domNode.style.opacity = 0.8
-                this.domNode.style.width = 'max-content'
+                this.domNode.innerText = "User " + user.id
+                this.domNode.style.background = user.color
+                this.domNode.className = 'user-widget'
             }
             return this.domNode
         },
@@ -61,83 +45,39 @@ function insertWidget(e) {
                 preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE, monaco.editor.ContentWidgetPositionPreference.BELOW]
             }
         }
-    }
-}
+    }; 
 
-/* Moves a cursor */
-function changeWidgetPosition(e) {
-    contentWidgets[e.id].position.lineNumber = e.selection.endLineNumber
-    contentWidgets[e.id].position.column = e.selection.endColumn
+    editor.addContentWidget(user.widget);
 
-    editor.removeContentWidget(contentWidgets[e.id])
-    editor.addContentWidget(contentWidgets[e.id])
-}
-
-/* Changes a selection */
-function changeSeleciton(user, selection) {
-    let selectionArray = [];
-
-    if (selection.primarySelection.startColumn == selection.primarySelection.endColumn && selection.primarySelection.startLineNumber == selection.primarySelection.endLineNumber) { // If cursor
-        selection.primarySelection.endColumn++
-        selectionArray.push({
-            range: selection.primarySelection,
-            options: {
-                className: `${user}one`,
-                hoverMessage: {
-                    value: user
-                }
-            }
-        })
-
-    } else { // If selection
-        selectionArray.push({   
-            range: selection.primarySelection,
-            options: {
-                className: user,
-                hoverMessage: {
-                    value: user
-                }
-            }
-        })
-    }
-
-    for (let data of selection.secondarySelections) { // If multiple selections
-        if (data.startColumn == data.endColumn && data.startLineNumber == data.endLineNumber) {
-            selectionArray.push({
-                range: data,
-                options: {
-                    className: `${user}one`,
-                    hoverMessage: {
-                        value: user
-                    }
-                }
-            })
-        } else {
-            selectionArray.push({
-                range: data,
-                options: {
-                    className: user,
-                    hoverMessage: {
-                        value: user
-                    }
-                }
-            })
-        }
-    }
-
-    decorations[user] = editor.deltaDecorations(decorations[user] || [], selectionArray);  // Apply change
-}
-
-/* Change text in editor */
-function changeText(e) {
-    editor.getModel().applyEdits(e.changes) // Change content
+    users[user.id] = user;
 }
 
 /* Creates a new editor */
 require(["vs/editor/editor.main"], function () {
+    monaco.editor.defineTheme('default', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          {
+            token: "identifier",
+            foreground: "9CDCFE"
+          },
+          {
+            token: "identifier.function",
+            foreground: "DCDCAA"
+          },
+          {
+            token: "type",
+            foreground: "1AAFB0"
+          }
+        ],
+        colors: {}
+        });
+    monaco.editor.setTheme('default')
+
     editor = monaco.editor.create(document.getElementById("editor"), {
         value: "",
-        language: "html",
+        language: "javascript",
         fontSize: 15,
     }); 
 
@@ -146,21 +86,27 @@ require(["vs/editor/editor.main"], function () {
 
     socket.on("connected", () => {
         socket.emit("join", workspace); // Join the workspace
+
         socket.on("workspace", (data) => {
             editor.setValue(data.text); // Set the editor value
 
-            console.log(data.users);
-
             for (let userId in data.users) {
                 let user = data.users[userId];
-
-                insertCSS(user.id, user.color); // Insert CSS rules for the user
-                insertWidget(user); // Insert the user's cursor
-                decorations[user.id] = []; // Create a decorations array for the user
-                changeSeleciton(user.id, user.selection); // Change the selection
-                changeWidgetPosition(user); // Change the cursor position
+                userJoin(user);
             };
         });
+
+        socket.on("user-joined", (user) => {
+            userJoin(user); // Add the new user to the editor
+        });
+
+        socket.on("selection", (data) => {
+            users[data.userId].widget.position.lineNumber = data.selection.endLineNumber
+            users[data.userId].widget.position.column = data.selection.endColumn
+
+            editor.removeContentWidget(users[data.userId].widget); 
+            editor.addContentWidget(users[data.userId].widget);
+        }); 
     });
 
     editor.onDidChangeCursorSelection((e) => {
