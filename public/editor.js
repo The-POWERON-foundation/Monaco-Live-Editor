@@ -1,5 +1,6 @@
 let editor; // Editor instance
 let users = {}; // Connected users
+let blockChange = false; // Block text change events
 
 /* Load Monaco Editor */
 require.config({
@@ -69,53 +70,60 @@ function userJoin(user) {
 }
 
 function changeSeleciton(userId, selection, secondarySelections) {
-    var selectionArray = []
-    if (selection.startColumn == selection.endColumn && selection.startLineNumber == selection.endLineNumber) { //if cursor - 커서일 때
-        selection.endColumn++
-        selectionArray.push({
-            range: selection,
-            options: {
-                className: `user-${userId}-cursor cursor`,
-                hoverMessage: {
-                    value: "User " + userId
-                }
-            }
-        })
+    try {
+        let selectionArray = []; 
 
-    } else {    //if selection - 여러개를 선택했을 때
-        selectionArray.push({   
-            range: selection,
-            options: {
-                className: `user-${userId}-selection selection`,
-                hoverMessage: {
-                    value: "User " + userId
-                }
-            }
-        })
-    }
-    for (let data of secondarySelections) {       //if select multi - 여러개를 선택했을 때
-        if (data.startColumn == data.endColumn && data.startLineNumber == data.endLineNumber) {
+        if (selection.startColumn == selection.endColumn && selection.startLineNumber == selection.endLineNumber) { // If cursor
+            selection.endColumn ++;
             selectionArray.push({
-                range: data,
+                range: selection,
                 options: {
                     className: `user-${userId}-cursor cursor`,
                     hoverMessage: {
                         value: "User " + userId
                     }
                 }
-            })
-        } else
-            selectionArray.push({
-                range: data,
+            });
+        } 
+        else { // If selection
+            selectionArray.push({   
+                range: selection,
                 options: {
                     className: `user-${userId}-selection selection`,
                     hoverMessage: {
                         value: "User " + userId
                     }
                 }
-            })
-    }
-    users[userId].decorations = editor.deltaDecorations(users[userId].decorations, selectionArray); // Apply the decorations
+            });
+        }
+
+        for (let data of secondarySelections) { // If multiple cursors/selections
+            if (data.startColumn == data.endColumn && data.startLineNumber == data.endLineNumber) {
+                selectionArray.push({
+                    range: data,
+                    options: {
+                        className: `user-${userId}-cursor cursor`,
+                        hoverMessage: {
+                            value: "User " + userId
+                        }
+                    }
+                });
+            }
+            else {
+                selectionArray.push({
+                    range: data,
+                    options: {
+                        className: `user-${userId}-selection selection`,
+                        hoverMessage: {
+                            value: "User " + userId
+                        }
+                    }
+                });
+            }
+        }
+
+        users[userId].decorations = editor.deltaDecorations(users[userId].decorations, selectionArray); // Apply the decorations
+    } catch (e) {} // Handle invalid selection data
 }
 
 /* Creates a new editor */
@@ -155,6 +163,7 @@ require(["vs/editor/editor.main"], function () {
         socket.emit("join", workspace); // Join the workspace
 
         socket.on("workspace", (data) => {
+            blockChange = true; // Prevent text change events from triggering the socket.io event
             editor.setValue(data.text); // Set the editor value
 
             for (let userId in data.users) {
@@ -183,9 +192,23 @@ require(["vs/editor/editor.main"], function () {
 
             changeSeleciton(data.userId, data.selection, data.secondarySelections); // Update the user's selection
         }); 
+
+        socket.on("text-change", (data) => {
+            blockChange = true; // Prevent text change events from triggering the socket.io event
+            editor.getModel().applyEdits(data.changes); // Apply the text changes
+        });
     });
 
     editor.onDidChangeCursorSelection((e) => {
         socket.emit("selection", e); // Send selection data to the server
+    }); 
+
+    editor.onDidChangeModelContent((e) => { // Text change
+        if (blockChange) {
+            blockChange = false;
+            return;
+        }
+        console.log(e); 
+        socket.emit("text-change", e); // Send text change data to the server
     }); 
 }); 

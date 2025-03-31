@@ -4,6 +4,9 @@ const path = require("path");
 let userId = 0; // Increment this for each new user
 let workspaces = {}; // Store the workspace data
 
+const SAVE_INTERVAL = 10000; // Save the workspace every 10 seconds
+const SHOW_LOG = true; // Show log messages
+
 /*const colors = [  
     '#DDFFAA',
     '#95E0C8',
@@ -28,7 +31,8 @@ const colors = [
 
 module.exports = function(io) {
     io.on("connection", (socket) => {
-        console.log(`User ${userId} connected`);
+        if (SHOW_LOG) console.log(`User ${userId} connected`);
+
         socket.variables = {}; // Create a variables object in the socket
         socket.variables.userId = userId; // Store the user ID in the socket
         
@@ -36,12 +40,13 @@ module.exports = function(io) {
         userId ++; // Increment the user ID 
 
         socket.on("join", (workspace) => {
-            console.log(`User ${socket.variables.userId} joined workspace ${workspace}`);
+            if (SHOW_LOG) console.log(`User ${socket.variables.userId} joined workspace ${workspace}`);
 
             if (!workspaces[workspace]) { // If the workspace does not exist
                 workspaces[workspace] = {
                     users: {},
-                    text: fs.readFileSync(path.join(__dirname, "..", "files", workspace), "utf-8")
+                    text: fs.readFileSync(path.join(__dirname, "..", "files", workspace), "utf-8"), 
+                    lastSave: Date.now()
                 }; // Create the workspace
             }
 
@@ -60,20 +65,24 @@ module.exports = function(io) {
         });
 
         socket.on("disconnect", () => {
-            console.log(`User ${socket.variables.userId} disconnected`);
+            if (SHOW_LOG) console.log(`User ${socket.variables.userId} disconnected`);
 
             io.to(socket.variables.workspace).emit("user-left", socket.variables.userId); // Send the user-left event to all users in the workspace
 
             if (socket.variables.workspace) { // If the user is in a workspace
                 delete workspaces[socket.variables.workspace].users[socket.variables.userId]; // Delete the user from the workspace
 
-                if (workspaces[socket.variables.workspace].users.length == 0) { // If no users are in the workspace
+                if (Object.keys(workspaces[socket.variables.workspace].users).length == 0) { // If there are no users left in the workspace
+                    fs.writeFileSync(path.join(__dirname, "..", "files", socket.variables.workspace), workspaces[socket.variables.workspace].text); // Save the workspace
+                    if (SHOW_LOG) console.log(`Workspace ${socket.variables.workspace} saved and closed`);
                     delete workspaces[socket.variables.workspace]; // Delete the workspace
                 }
             }
         }); 
 
         socket.on("selection", (data) => {
+            if (!data.selection || !data.secondarySelections) return; // Ignore invalid selection data
+
             workspaces[socket.variables.workspace].users[socket.variables.userId].selection = data.selection; // Update the user's selection
             workspaces[socket.variables.workspace].users[socket.variables.userId].secondarySelections = data.secondarySelections; // Update the user's secondary selections
 
@@ -82,6 +91,24 @@ module.exports = function(io) {
                 selection: workspaces[socket.variables.workspace].users[socket.variables.userId].selection, 
                 secondarySelections: workspaces[socket.variables.workspace].users[socket.variables.userId].secondarySelections
             }); // Send the selection update to all users in the workspace
+        }); 
+
+        socket.on("text-change", (data) => {
+            data.changes.forEach((change) => {
+                let start = change.rangeOffset || 0;
+                let end = (change.rangeOffset || 0) + (change.rangeLength || 0);
+                let text = change.text || ""; 
+
+                workspaces[socket.variables.workspace].text = workspaces[socket.variables.workspace].text.slice(0, start) + text + workspaces[socket.variables.workspace].text.slice(end); // Update the text
+
+            }); // Apply all the changes
+
+            if (Date.now() - workspaces[socket.variables.workspace].lastSave > SAVE_INTERVAL) { // If the workspace has not been saved in the set interval yet
+                fs.writeFileSync(path.join(__dirname, "..", "files", socket.variables.workspace), workspaces[socket.variables.workspace].text); // Save the workspace
+                workspaces[socket.variables.workspace].lastSave = Date.now(); // Update the last save time
+            }
+
+            io.to(socket.variables.workspace).except(socket.id).emit("text-change", data); // Send the text change to all users in the
         }); 
     }); 
 }; 
