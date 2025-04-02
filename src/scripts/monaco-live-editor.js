@@ -7,16 +7,16 @@ let socket = io(); // Connect to the socket.io server
 /* Load Monaco Editor */
 require.config({
     paths: {
-        'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.13.1/min/vs'
+        'vs': `${window.location.protocol}//${window.location.host}/monaco-editor/min/vs`
     }
 });
 window.MonacoEnvironment = {
     getWorkerUrl: function (workerId, label) {
         return `data:text/javascriptcharset=utf-8,${encodeURIComponent(`
             self.MonacoEnvironment = {
-            baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.13.1/min'
+                baseUrl: '${window.location.protocol}//${window.location.host}/monaco-editor/min'
             }
-            importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.13.1/min/vs/base/worker/workerMain.js')
+            importScripts('${window.location.protocol}//${window.location.host}/monaco-editor/min/vs/base/worker/workerMain.js')
         `)}`; 
     }
 }
@@ -189,33 +189,37 @@ require(["vs/editor/editor.main"], function () {
         fontSize: 15,
     }); 
 
-    socket.on("connected", () => {
-        socket.on("user-joined", (user) => {
-            userJoin(user); // Add the new user to the editor
-        });
+    // socket.on("connected", () => {});
 
-        socket.on("user-left", (userID) => {
-            let user = users[userID];
-            editor.removeContentWidget(user.widget);
-            editor.deltaDecorations(user.decorations, []);
-            delete users[userID];
-        });
-
-        socket.on("selection", (data) => {
-            users[data.userID].widget.position.lineNumber = data.selection.endLineNumber;
-            users[data.userID].widget.position.column = data.selection.endColumn;
-
-            editor.removeContentWidget(users[data.userID].widget); 
-            editor.addContentWidget(users[data.userID].widget);
-
-            changeSeleciton(data.userID, data.selection, data.secondarySelections); // Update the user's selection
-        }); 
-
-        socket.on("text-change", (data) => {
-            blockChange = true; // Prevent text change events from triggering the socket.io event
-            editor.getModel().applyEdits(data.changes); // Apply the text changes
-        });
+    socket.on("user-joined", (user) => {
+        userJoin(user); // Add the new user to the editor
     });
+
+    socket.on("user-left", (userID) => {
+        let user = users[userID];
+        editor.removeContentWidget(user.widget);
+        editor.deltaDecorations(user.decorations, []);
+        delete users[userID];
+    });
+
+    socket.on("selection", (data) => {
+        users[data.userID].widget.position.lineNumber = data.selection.endLineNumber;
+        users[data.userID].widget.position.column = data.selection.endColumn;
+
+        editor.removeContentWidget(users[data.userID].widget); 
+        editor.addContentWidget(users[data.userID].widget);
+
+        changeSeleciton(data.userID, data.selection, data.secondarySelections); // Update the user's selection
+    }); 
+
+    socket.on("text-change", (data) => {
+        blockChange = true; // Prevent text change events from triggering the socket.io event
+        editor.getModel().applyEdits(data.changes); // Apply the text changes
+    });
+
+    socket.on('disconnect', function() {
+        socket.reconnect();
+    }); 
 
     editor.onDidChangeCursorSelection((e) => {
         socket.emit("selection", e); // Send selection data to the server
