@@ -14,13 +14,12 @@
 - New users can connect after stream start
 
 ## Hosting
-1. Download the code in ZIP, extract it and enter the extracted directory. 
-2. Run `npm install`
-3. Run `npm start` to start the server
-4. Visit `http://localhost/`
+1. `npm i @the-poweron-foundation/monaco-live-editor`
+2. Run example script: `node node_modules/@the-poweron-foundation/monaco-live-editor/example/index.js`
+3. Open `http://localhost/`
 
-## Storage
-Shared files are stored under `files` directory. All files are auto-saved every 10 seconds or after all users are disconnected from the workspace. 
+## Example
+The example script can be found under folder `example`. 
 
 ## Credits
 - Monaco editor: `microsoft/monaco-editor` 

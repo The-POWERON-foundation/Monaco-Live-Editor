@@ -73,7 +73,7 @@ function userJoin(user) {
 }
 
 /* User changes selection */
-function changeSeleciton(userId, selection, secondarySelections) {
+function changeSeleciton(userID, selection, secondarySelections) {
     try {
         let selectionArray = []; 
 
@@ -82,9 +82,9 @@ function changeSeleciton(userId, selection, secondarySelections) {
             selectionArray.push({
                 range: selection,
                 options: {
-                    className: `user-${userId}-cursor cursor`,
+                    className: `user-${userID}-cursor cursor`,
                     hoverMessage: {
-                        value: "User " + userId
+                        value: "User " + userID
                     }
                 }
             });
@@ -93,9 +93,9 @@ function changeSeleciton(userId, selection, secondarySelections) {
             selectionArray.push({   
                 range: selection,
                 options: {
-                    className: `user-${userId}-selection selection`,
+                    className: `user-${userID}-selection selection`,
                     hoverMessage: {
-                        value: "User " + userId
+                        value: "User " + userID
                     }
                 }
             });
@@ -106,9 +106,9 @@ function changeSeleciton(userId, selection, secondarySelections) {
                 selectionArray.push({
                     range: data,
                     options: {
-                        className: `user-${userId}-cursor cursor`,
+                        className: `user-${userID}-cursor cursor`,
                         hoverMessage: {
-                            value: "User " + userId
+                            value: "User " + userID
                         }
                     }
                 });
@@ -117,16 +117,16 @@ function changeSeleciton(userId, selection, secondarySelections) {
                 selectionArray.push({
                     range: data,
                     options: {
-                        className: `user-${userId}-selection selection`,
+                        className: `user-${userID}-selection selection`,
                         hoverMessage: {
-                            value: "User " + userId
+                            value: "User " + userID
                         }
                     }
                 });
             }
         }
 
-        users[userId].decorations = editor.deltaDecorations(users[userId].decorations, selectionArray); // Apply the decorations
+        users[userID].decorations = editor.deltaDecorations(users[userID].decorations, selectionArray); // Apply the decorations
     } catch (e) {} // Handle invalid selection data
 }
 
@@ -154,8 +154,8 @@ function joinWorkspace() {
         blockChange = true; // Prevent text change events from triggering the socket.io event
         editor.setValue(data.text); // Set the editor value
 
-        for (let userId in data.users) {
-            let user = data.users[userId];
+        for (let userID in data.users) {
+            let user = data.users[userID];
             userJoin(user);
         };
     });
@@ -194,21 +194,21 @@ require(["vs/editor/editor.main"], function () {
             userJoin(user); // Add the new user to the editor
         });
 
-        socket.on("user-left", (userId) => {
-            let user = users[userId];
+        socket.on("user-left", (userID) => {
+            let user = users[userID];
             editor.removeContentWidget(user.widget);
             editor.deltaDecorations(user.decorations, []);
-            delete users[userId];
+            delete users[userID];
         });
 
         socket.on("selection", (data) => {
-            users[data.userId].widget.position.lineNumber = data.selection.endLineNumber;
-            users[data.userId].widget.position.column = data.selection.endColumn;
+            users[data.userID].widget.position.lineNumber = data.selection.endLineNumber;
+            users[data.userID].widget.position.column = data.selection.endColumn;
 
-            editor.removeContentWidget(users[data.userId].widget); 
-            editor.addContentWidget(users[data.userId].widget);
+            editor.removeContentWidget(users[data.userID].widget); 
+            editor.addContentWidget(users[data.userID].widget);
 
-            changeSeleciton(data.userId, data.selection, data.secondarySelections); // Update the user's selection
+            changeSeleciton(data.userID, data.selection, data.secondarySelections); // Update the user's selection
         }); 
 
         socket.on("text-change", (data) => {

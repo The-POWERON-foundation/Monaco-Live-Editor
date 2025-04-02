@@ -1,12 +1,35 @@
 {
+  "name": "@the-poweron-foundation/monaco-live-editor",
+  "version": "2.0.3",
+  "description": "Monaco Live Editor is an extension for the web-based Monaco editor that allows real-time code collaboration.",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-POWERON-foundation/Monaco-Live-Editor.git"
+  },
+  "scripts": {
+    "example": "node example/index.js"
+  },
+  "keywords": [
+    "monaco",
+    "live",
+    "code",
+    "editor",
+    "collaboration",
+    "web",
+    "realtime"
+  ],
+  "author": "The POWERON foundation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/The-POWERON-foundation/Monaco-Live-Editor/issues"
+  },
+  "homepage": "https://github.com/The-POWERON-foundation/Monaco-Live-Editor#readme",
   "dependencies": {
-    "express": "^4.21.2",
-    "http": "^0.0.1-security",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
     "monaco-editor": "^0.52.2",
     "path": "^0.12.7",
     "socket.io": "^4.8.1"
-  },
-  "scripts": {
-    "start": "node index.js"
   }
 }
