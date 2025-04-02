@@ -2,7 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const socketIO = require("socket.io");
 const express = require("express");
-const http = require("http");
 
 function isValidFilename(workspaceFolder, filename) {
     if (!filename) return false; // Reject empty filenames
@@ -20,10 +19,10 @@ function isValidFilename(workspaceFolder, filename) {
     return resolvedPath.startsWith(safeDirectory); // Prevent directory traversal
 }
 
-function MonacoLiveEditor(expressServer, folder) {
-    this.expressServer = expressServer; // Store the express server instance
-    this.server = null; // Store the server instance
-    this.workspaceFolder = folder; // Set the workspace folder
+function MonacoLiveEditor() {
+    this.expressServer = null; // Store the express server instance
+    this.httpServer = null; // Store the HTTP server instance
+    this.workspaceFolder = null; // Set the workspace folder
 
     this.userID = 0; // Increment this for each new user
     this.workspaces = {}; // Store the workspace data
@@ -47,13 +46,23 @@ function MonacoLiveEditor(expressServer, folder) {
     this.io = null; // Socket.IO server instance
 }
 
+MonacoLiveEditor.prototype.setWorkspaceFolder = function(path) {
+    this.workspaceFolder = path;
+}
+
 MonacoLiveEditor.prototype.setShowLog = function(showLog) {
     this.showLog = showLog; // Set whether to show log messages
 }
 
-MonacoLiveEditor.prototype.startServer = function(port) {
-    this.server = http.createServer(this.expressServer); // Create an HTTP server with the express server
-    this.io = socketIO(this.server); // Initialize Socket.IO with the server
+MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
+    if (!this.workspaceFolder) {
+        throw "Must set workspace folder before starting server"; 
+    }
+
+    this.expressServer = expressServer; 
+    this.httpServer = httpServer; 
+
+    this.io = socketIO(this.httpServer); // Initialize Socket.IO with the server
     this.expressServer.use("/monaco-editor", express.static(path.join(__dirname, "../node_modules/monaco-editor"))); // Serve Monaco Editor files
     this.expressServer.use("/monaco-live-editor", express.static(path.join(__dirname, "scripts"))); // Serve monaco-live-editor files
 
@@ -154,8 +163,6 @@ MonacoLiveEditor.prototype.startServer = function(port) {
             this.io.to(socket.variables.workspace).except(socket.id).emit("text-change", data); // Send the text change to all users in the
         }); 
     }); 
-
-    this.server.listen(port || 80); // Start the server on the specified port or default to 80
 }
 
 module.exports = MonacoLiveEditor; // Export the MonacoLiveEditor class

@@ -1,10 +1,16 @@
-const express = require("express")
-const server = express();
+const express = require("express"); 
+const expressServer = express();
+const http = require("http"); 
+const httpServer = http.createServer(expressServer); 
+
 const path = require("path");
 const MonacoLiveEditor = require("../src/index"); // After installing the package, you can replace it with '@the-poweron-foundation/monaco-live-editor'
 
-server.use(express.static(path.join(__dirname, "public"))); // Serve static files from the public directory
+expressServer.use(express.static(path.join(__dirname, "public"))); // Serve static files from the public directory
 
-let editor = new MonacoLiveEditor(server, path.resolve(__dirname, "workspace")); // Initialize MonacoLiveEditor with the server and workspace folder
-editor.setShowLog(true); // Enable log messages
-editor.startServer(80); // Start the server
+let editor = new MonacoLiveEditor(); 
+editor.setShowLog(true); // Show log
+editor.setWorkspaceFolder(path.resolve(__dirname, "workspace")); 
+editor.startServer(expressServer, httpServer); 
+
+httpServer.listen(80); 
