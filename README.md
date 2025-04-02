@@ -19,7 +19,7 @@
 3. Open `http://localhost/`
 
 ## Example
-The example script can be found under folder `example`. 
+The example script can be found under the `example` folder. 
 
 ## Credits
 - Monaco editor: `microsoft/monaco-editor` 
