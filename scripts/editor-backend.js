@@ -1,5 +1,6 @@
 const fs = require("fs"); 
 const path = require("path");
+const monaco = require("monaco-editor"); // Import Monaco Editor
 
 let userId = 0; // Increment this for each new user
 let workspaces = {}; // Store the workspace data
