@@ -14,8 +14,8 @@
 - New users can connect after stream start
 
 ## Hosting
-1. `npm i @the-poweron-foundation/monaco-live-editor`
-2. Run example script: `node node_modules/@the-poweron-foundation/monaco-live-editor/example/index.js`
+1. `npm i monaco-live-editor`
+2. Run example script: `node node_modules/monaco-live-editor/example/index.js`
 3. Open `http://localhost/`
 
 ## Example
