@@ -19,6 +19,34 @@ require(["vs/editor/editor.main"], () => {
     window.monaco = monaco; 
 }); 
 
+/* Load editor style */
+let editorStyle = document.createElement("style"); 
+editorStyle.innerHTML = `
+    .user-widget {
+        color: black; 
+        opacity: .8; 
+        width: max-content;
+        padding-left: 2px; 
+        padding-right: 2px; 
+        border-radius: 2px; 
+
+        transition: opacity .2s;
+    }
+
+    .user-widget:hover {
+        opacity: .2;
+    }
+
+    .cursor {
+        width: 2px !important;
+    }
+
+    .selection {
+        padding-right: 7px !important;
+    }
+`; 
+document.head.appendChild(editorStyle); 
+
 function MonacoLiveEditor(parentElement) {
     this.parentElement = parentElement; 
 
@@ -77,6 +105,10 @@ function MonacoLiveEditor(parentElement) {
         };
     });
 
+    this.socket.on("user-joined", (user) => {
+        this.userJoin(user); // Add the new user to the editor
+    });
+
     
     /* Initialize the editor */
     this.monacoScriptLoadInterval = setInterval(() => {
@@ -118,7 +150,7 @@ function MonacoLiveEditor(parentElement) {
 
 MonacoLiveEditor.prototype.joinWorkspace = function(workspace) {
     this.joinWorkspaceInterval = setInterval(() => {
-        if (window.monaco) {
+        if (this.editor) {
             clearInterval(this.joinWorkspaceInterval); 
 
             const model = window.monaco.editor.createModel(
@@ -136,4 +168,58 @@ MonacoLiveEditor.prototype.joinWorkspace = function(workspace) {
 
 MonacoLiveEditor.prototype.onError = function(error) {}
 
-MonacoLiveEditor.prototype.userJoin = function() {}
+MonacoLiveEditor.prototype.userJoin = function(user) {
+    user.widget = {
+        domNode: null,
+        position: {
+            lineNumber: user.selection.endLineNumber || 0,
+            column: user.selection.endColumn || 0
+        },
+        getId: function () {
+            return 'content.' + user.id
+        },
+        getDomNode: function () {
+            if (!this.domNode) {
+                this.domNode = document.createElement('div')
+                this.domNode.innerText = "User " + user.id
+                this.domNode.style.background = user.color.replace("opacity", "1")
+                this.domNode.className = 'user-widget'
+            }
+            return this.domNode
+        },
+        getPosition: function () {
+            return {
+                position: this.position,
+                preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE, monaco.editor.ContentWidgetPositionPreference.BELOW]
+            }
+        }
+    }; 
+
+    let userJoinInterval = setInterval(() => {
+        if (this.editor) {
+            clearInterval(userJoinInterval); 
+
+            this.editor.addContentWidget(user.widget);
+
+            /* Adds styles for user's cursor and selection */
+            let style = document.createElement('style');
+            style.innerHTML = `
+                .user-${user.id}-cursor {
+                    background: ${user.color.replace("opacity", "1")} !important;
+                }
+                
+                .user-${user.id}-selection {
+                    background: ${user.color.replace("opacity", "0.3")};
+                }
+            `; 
+            document.head.appendChild(style);
+
+            user.decorations = [];
+            this.users[user.id] = user;
+
+            if (user.selection) {
+                this.changeSeleciton(user.id, user.selection, user.secondarySelections); // Apply the user's selection
+            }
+        }
+    }, 0); 
+}
