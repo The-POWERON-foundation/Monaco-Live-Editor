@@ -22,6 +22,11 @@ require(["vs/editor/editor.main"], () => {
 /* Load editor style */
 let editorStyle = document.createElement("style"); 
 editorStyle.innerHTML = `
+    @font-face {
+        font-family: Monaco;
+        src: url(/monaco-live-editor/monaco.ttf);
+    }
+    
     .user-widget {
         color: black; 
         opacity: .8; 
@@ -67,13 +72,31 @@ function MonacoLiveEditor(parentElement) {
     `; 
     this.parentElement.appendChild(this.element); 
 
-    this.loading = document.createElement("img"); 
-    this.loading.src = "/monaco-live-editor/loading.svg"; 
+    this.loading = document.createElement("div"); 
     this.loading.style = `
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+    `; 
+    this.element.appendChild(this.loading); 
+
+    this.loadingImage = document.createElement("img"); 
+    this.loadingImage.src = "/monaco-live-editor/loading.svg"; 
+    this.loadingImage.style = `
         width: 3em; 
         aspect-ratio: 1 / 1; 
     `; 
-    this.element.appendChild(this.loading); 
+    this.loading.appendChild(this.loadingImage); 
+
+    this.loadingText = document.createElement("span"); 
+    this.loadingText.innerHTML = "Connecting to server..."; 
+    this.loadingText.style = `
+        color: white; 
+        font-family: Monaco; 
+        padding-top: 0.5em; 
+    `; 
+    this.loading.appendChild(this.loadingText); 
 
     this.monacoEditor = document.createElement("div"); 
     this.monacoEditor.style = `

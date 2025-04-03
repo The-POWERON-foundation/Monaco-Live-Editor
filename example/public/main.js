@@ -1,6 +1,10 @@
 let parentElement = document.getElementById("editor"); 
 let editor = new MonacoLiveEditor(parentElement); 
-editor.joinWorkspace("test.js"); 
+
+function joinWorkspace() {
+    let workspace = document.getElementById("workspace").value;
+    editor.joinWorkspace(workspace); 
+}
 
 editor.onError = (error) => {
     alert(error); 
