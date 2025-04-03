@@ -64,7 +64,7 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
 
     this.io = socketIO(this.httpServer); // Initialize Socket.IO with the server
     this.expressServer.use("/monaco-editor", express.static(path.join(__dirname, "../node_modules/monaco-editor"))); // Serve Monaco Editor files
-    this.expressServer.use("/monaco-live-editor", express.static(path.join(__dirname, "scripts"))); // Serve monaco-live-editor files
+    this.expressServer.use("/monaco-live-editor", express.static(path.join(__dirname, "public"))); // Serve monaco-live-editor files
 
     if (this.showLog) console.log("MonacoLiveEditor: Server started"); // Log server start
 

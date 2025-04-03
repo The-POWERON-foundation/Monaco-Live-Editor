@@ -235,6 +235,6 @@ require(["vs/editor/editor.main"], function () {
     }); 
 }); 
 
-window.onresize = function (){
+window.onresize = function() {
     editor.layout();
 };
