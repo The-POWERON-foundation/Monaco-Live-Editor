@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Monaco Live Editor</title>
+
+        <style>
+            @font-face {
+                font-family: Monaco;
+                src: url(/monaco-live-editor/monaco.ttf);
+            }
+
+            html, body {
+                width: 100%; 
+                height: 100%; 
+                margin: 0;
+                overflow: hidden; 
+
+                display: flex; 
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+
+                background: rgb(50, 50, 50); 
+            }
+
+            #editor {
+                margin: 10px; 
+                width: calc(100% - 22px); 
+                flex: 1; 
+
+                border: 1px solid rgb(100, 100, 100); 
+                border-radius: 10px; 
+                overflow: hidden; 
+            }
+
+            #workspace-select {
+                margin-top: 10px; 
+                width: calc(100% - 20px); 
+
+                display: flex; 
+
+                font-family: Monaco;
+                color: white; 
+            }
+
+            #workspace {
+                background: rgb(30, 30, 30); 
+                border: 1px solid rgb(100, 100, 100); 
+                border-radius: 5px;
+                
+                font-family: Monaco;
+                color: white; 
+            }
+
+            #join-workspace {
+                background: rgb(0, 0, 180); 
+                border: 1px solid rgb(100, 100, 180); 
+                border-radius: 5px;
+
+                font-family: Monaco;
+                color: white; 
+            }
+        </style>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" src="/monaco-editor/min/vs/loader.js"></script>
+        <script src="/monaco-live-editor/monaco-live-editor.js"></script>
+    </head>
+
+    <body>
+        <form id="workspace-select" action="#" onsubmit="event.preventDefault(); joinWorkspace()">
+            <span>Please join a workspace first: </span>
+            <div style="flex:1"></div>
+            <label for="workspace">Workspace:&nbsp;</label>
+            <input type="text" name="workspace" id="workspace">
+            &nbsp; 
+            <input type="submit" id="join-workspace" value="Join workspace">
+        </form>
+        <div id="editor"></div>
+        <script src="main.js"></script>
+    </body>
+</html>
