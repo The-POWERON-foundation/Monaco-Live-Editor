@@ -37,41 +37,41 @@ function isValidFilename(workspaceFolder, filename) {
 }
 
 function loadWorkspace(workspacePath) {
-    let files = {}; // Store files in the workspace
+    let filesystem = {}; // Store files in the workspace
     fs.readdirSync(workspacePath).forEach((file) => {
         let filePath = path.join(workspacePath, file); // Get the file path
         let fileStat = fs.lstatSync(filePath); // Get the file stats
 
         if (fileStat.isDirectory()) { // If the file is a directory
-            files[file] = { // Create a directory object
+            filesystem[file] = { // Create a directory object
                 type: "directory", // Set the file type to directory
                 content: loadWorkspace(path.join(workspacePath, file)) // Recursively load the directory
             };
         }
         
         else if (fileStat.isFile()) { // If the file is a file
-            files[file] = { // Create a file object
+            filesystem[file] = { // Create a file object
                 type: "file", // Set the file type to file
                 content: fs.readFileSync(path.join(workspacePath, file), "utf-8") // Read the file content
             };
         }
 
         else if (fileStat.isSymbolicLink()) { // If the file is a symbolic link
-            files[file] = { // Create a symbolic link object
+            filesystem[file] = { // Create a symbolic link object
                 type: "symlink", // Set the file type to symlink
                 target: fs.readlinkSync(path.join(workspacePath, file)) // Read the symbolic link target
             };
         }
 
         else { // If the file is not a file or directory
-            files[file] = { // Create a file object
+            filesystem[file] = { // Create a file object
                 type: "unknown", // Set the file type to unknown
                 content: null // Set the content to null
             };
         }
     });
 
-    return files; // Return the loaded files
+    return filesystem; // Return the loaded files
 }
 
 function MonacoLiveEditor() {
@@ -153,11 +153,11 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
             if (!this.workspaces[workspace]) { // If the workspace does not exist
                 this.workspaces[workspace] = {
                     users: {},
-                    files: {}, // Store files in the workspace
+                    filesystem: {}, // Store files in the workspace
                     lastSave: Date.now()
                 }; // Create the workspace
 
-                this.workspaces[workspace].files = loadWorkspace(workspacePath); // Load files from the workspace folder
+                this.workspaces[workspace].filesystem = loadWorkspace(workspacePath); // Load files from the workspace folder
             }
 
             socket.emit("workspace", this.workspaces[workspace]); // Send the workspace to the user

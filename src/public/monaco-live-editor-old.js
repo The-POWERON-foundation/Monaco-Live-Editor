@@ -49,54 +49,8 @@ editorStyle.innerHTML = `
     .selection {
         padding-right: 7px !important;
     }
-
-    .file {
-        color: white; 
-        font-family: Monaco; 
-        padding: 0.5em; 
-        cursor: pointer; 
-        white-space: nowrap;
-    }
-
-    .file img {
-        width: 1em; 
-        aspect-ratio: 1 / 1; 
-        margin-right: 0.5em; 
-        vertical-align: -0.2em; 
-    }
-
-    .file:hover {
-        background: rgb(50, 50, 50); 
-    }
 `; 
 document.head.appendChild(editorStyle); 
-
-function updateFilesystem(element, filesystem) {
-    element.innerHTML = ""; // Clear the filesystem
-
-    for (let file in filesystem) {
-        let fileElement = document.createElement("div"); 
-        fileElement.className = "file"; 
-        element.appendChild(fileElement); 
-
-        let fileThumbnail = document.createElement("img");
-
-        switch (filesystem[file].type) {
-            case "directory":
-                fileThumbnail.src = "/monaco-live-editor/file-thumbnails/directory.svg";
-                break;
-            case "file":
-                fileThumbnail.src = "/monaco-live-editor/file-thumbnails/unknown.svg";
-                break;
-        }
-
-        fileElement.appendChild(fileThumbnail);
-
-        let fileName = document.createElement("span");
-        fileName.innerHTML = file;
-        fileElement.appendChild(fileName);
-    }
-}
 
 function MonacoLiveEditor(parentElement) {
     this.parentElement = parentElement; 
@@ -144,15 +98,6 @@ function MonacoLiveEditor(parentElement) {
     `; 
     this.loading.appendChild(this.loadingText); 
 
-    this.filesystem = document.createElement("div");
-    this.filesystem.style = `
-        display: none;
-        flex-direction: column;
-        border-right: 1px solid rgb(100, 100, 100);
-        height: 100%;
-    `;
-    this.element.appendChild(this.filesystem);
-
     this.monacoEditor = document.createElement("div"); 
     this.monacoEditor.style = `
         flex: 1; 
@@ -171,11 +116,7 @@ function MonacoLiveEditor(parentElement) {
 
     this.socket.on("workspace", (data) => {
         this.loading.style.display = "none"; 
-        this.filesystem.style.display = "flex";
         this.monacoEditor.style.display = ""; 
-
-        updateFilesystem(this.filesystem, data.filesystem); // Update the filesystem
-
         this.editor.layout(); 
 
         this.blockChange = true; // Prevent text change events from triggering the socket.io event
