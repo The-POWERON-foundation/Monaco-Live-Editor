@@ -50,7 +50,18 @@ editorStyle.innerHTML = `
         padding-right: 7px !important;
     }
 
-    .file {
+    .node-element-container {
+        display: flex;
+        width: 100%;
+    }
+
+    .node-element {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .node {
         color: white; 
         font-family: IBM Plex Sans; 
 
@@ -65,18 +76,86 @@ editorStyle.innerHTML = `
         color: rgb(220, 220, 220);
     }
 
-    .file img {
+    .node img {
         width: 1em; 
         aspect-ratio: 1 / 1; 
         margin-right: 0.5em; 
         vertical-align: -0.15em; 
     }
 
-    .file:hover {
+    .node:hover {
         background: rgb(50, 50, 50); 
+    }
+
+    .directory-children {
+        margin-left: 0.9em; 
+        position: relative;
+    }
+
+    .directory-children:before {
+        content: "";
+        height: calc(100% - 1em + 1px);
+        position: absolute;
+        border-left: 1px solid rgb(100, 100, 100);
+    }
+
+    .line {
+        width: 1em; 
+        height: 1px;
+        border-top: 1px solid rgb(100, 100, 100);
+        margin-top: calc(1em - 1px); 
     }
 `; 
 document.head.appendChild(editorStyle); 
+
+function updateDirectoryChildren(element, children, isRoot = false) {
+    element.innerHTML = ""; // Clear the children
+
+    children.forEach((node) => {
+        let nodeElementContainer = document.createElement("div"); 
+        nodeElementContainer.className = "node-element-container"; 
+        nodeElementContainer.id = node.path; 
+        element.appendChild(nodeElementContainer); 
+
+        if (!isRoot) {
+            let line = document.createElement("div"); 
+            line.className = "line"; 
+            nodeElementContainer.appendChild(line); 
+        }
+
+        let nodeElement = document.createElement("div");
+        nodeElement.className = "node-element";
+        nodeElementContainer.appendChild(nodeElement);
+
+        let selfNodeElement = document.createElement("div");
+        selfNodeElement.className = "node";
+        nodeElement.appendChild(selfNodeElement);
+
+        if (node.type == "directory") {
+            let children = document.createElement("div");
+            children.className = "directory-children";
+            updateDirectoryChildren(children, node.children); // Update the children of the directory
+            nodeElement.appendChild(children);
+        }
+
+        let nodeThumbnail = document.createElement("img");
+
+        switch (node.type) {
+            case "directory":
+                nodeThumbnail.src = "/monaco-live-editor/file-thumbnails/directory.svg";
+                break;
+            case "file":
+                nodeThumbnail.src = "/monaco-live-editor/file-thumbnails/unknown.svg";
+                break;
+        }
+
+        selfNodeElement.appendChild(nodeThumbnail);
+
+        let nodeName = document.createElement("span");
+        nodeName.innerHTML = node.name;
+        selfNodeElement.appendChild(nodeName);
+    }); 
+}
 
 function updateFilesystem(element, filesystem) {
     element.innerHTML = ""; // Clear the filesystem
@@ -92,9 +171,9 @@ function updateFilesystem(element, filesystem) {
             }
         });
 
-        filesystem.forEach((file) => {
-            if (file.children) {
-                file.children = sortFilesystem(file.children); // Sort children
+        filesystem.forEach((node) => {
+            if (node.children) {
+                node.children = sortFilesystem(node.children); // Sort children
             }
         });
 
@@ -103,28 +182,7 @@ function updateFilesystem(element, filesystem) {
 
     filesystem = sortFilesystem(filesystem); // Sort the filesystem
 
-    filesystem.forEach((file) => {
-        let fileElement = document.createElement("div"); 
-        fileElement.className = "file"; 
-        element.appendChild(fileElement); 
-
-        let fileThumbnail = document.createElement("img");
-
-        switch (file.type) {
-            case "directory":
-                fileThumbnail.src = "/monaco-live-editor/file-thumbnails/directory.svg";
-                break;
-            case "file":
-                fileThumbnail.src = "/monaco-live-editor/file-thumbnails/unknown.svg";
-                break;
-        }
-
-        fileElement.appendChild(fileThumbnail);
-
-        let fileName = document.createElement("span");
-        fileName.innerHTML = file.name;
-        fileElement.appendChild(fileName);
-    }); 
+    updateDirectoryChildren(element, filesystem, true); // Update the filesystem
 }
 
 function MonacoLiveEditor(parentElement) {
