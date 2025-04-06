@@ -117,6 +117,10 @@ function updateDirectoryChildren(element, children, isRoot = false) {
         nodeElementContainer.id = node.path; 
         element.appendChild(nodeElementContainer); 
 
+        nodeElementContainer.addEventListener("click", (e) => {
+            e.stopPropagation(); // Prevent the click event from bubbling up to the parent element
+        }); 
+
         if (!isRoot) {
             let line = document.createElement("div"); 
             line.className = "line"; 
@@ -134,8 +138,21 @@ function updateDirectoryChildren(element, children, isRoot = false) {
         if (node.type == "directory") {
             let children = document.createElement("div");
             children.className = "directory-children";
+            children.style.display = "none"; // Hide the children by default
             updateDirectoryChildren(children, node.children); // Update the children of the directory
             nodeElement.appendChild(children);
+
+            nodeElement.addEventListener("click", (e) => {
+                e.stopPropagation(); // Prevent the click event from bubbling up to the parent element
+
+                let children = e.currentTarget.parentElement.querySelector(".directory-children");
+
+                if (children.style.display == "none") {
+                    children.style.display = ""; // Show the children
+                } else {
+                    children.style.display = "none"; // Hide the children
+                }
+            }); // Add click event to toggle children
         }
 
         let nodeThumbnail = document.createElement("img");
@@ -237,6 +254,8 @@ function MonacoLiveEditor(parentElement) {
         flex-direction: column;
         border-right: 1px solid rgb(100, 100, 100);
         padding: 0.5em; 
+
+        user-select: none;
 
         min-width: 200px;
         height: calc(100% - 1em);
