@@ -30,44 +30,51 @@ function isValidFilename(workspaceFolder, filename) {
     }
 
     // Normalize and check if the resolved path stays inside the allowed directory
-    const safeDirectory = path.resolve(workspaceFolder); 
-    const resolvedPath = path.resolve(safeDirectory, filename);
+    const resolvedPath = path.join(workspaceFolder, filename);
 
-    return resolvedPath.startsWith(safeDirectory); // Prevent directory traversal
+    return resolvedPath.startsWith(workspaceFolder); // Prevent directory traversal
 }
 
 function loadWorkspace(workspacePath) {
-    let filesystem = {}; // Store files in the workspace
+    let filesystem = []; // Store files in the workspace
+
     fs.readdirSync(workspacePath).forEach((file) => {
         let filePath = path.join(workspacePath, file); // Get the file path
         let fileStat = fs.lstatSync(filePath); // Get the file stats
 
         if (fileStat.isDirectory()) { // If the file is a directory
-            filesystem[file] = { // Create a directory object
+            filesystem.push({ // Create a directory object
+                name: file, // Set the file name
                 type: "directory", // Set the file type to directory
-                content: loadWorkspace(path.join(workspacePath, file)) // Recursively load the directory
-            };
+                path: filePath, // Set the file path
+                children: loadWorkspace(filePath) // Recursively load the directory
+            });
         }
-        
+
         else if (fileStat.isFile()) { // If the file is a file
-            filesystem[file] = { // Create a file object
+            filesystem.push({ // Create a file object
+                name: file, // Set the file name
                 type: "file", // Set the file type to file
-                content: fs.readFileSync(path.join(workspacePath, file), "utf-8") // Read the file content
-            };
+                path: filePath, // Set the file path
+                content: fs.readFileSync(filePath, "utf-8") // Read the file content
+            });
         }
 
         else if (fileStat.isSymbolicLink()) { // If the file is a symbolic link
-            filesystem[file] = { // Create a symbolic link object
+            filesystem.push({ // Create a symbolic link object
+                name: file, // Set the file name
                 type: "symlink", // Set the file type to symlink
-                target: fs.readlinkSync(path.join(workspacePath, file)) // Read the symbolic link target
-            };
+                path: filePath, // Set the file path
+                target: fs.readlinkSync(filePath), // Read the symbolic link target
+            });
         }
 
-        else { // If the file is not a file or directory
-            filesystem[file] = { // Create a file object
+        else { // If the file is not a file or directory or a symbolic link
+            filesystem.push({ // Create a file object
+                name: file, // Set the file name
                 type: "unknown", // Set the file type to unknown
-                content: null // Set the content to null
-            };
+                path: filePath, // Set the file path
+            });
         }
     });
 
@@ -139,7 +146,7 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                 return; // Exit the function
             }
 
-            let workspacePath = path.resolve(this.workspaceFolder, workspace); // Get the workspace path
+            let workspacePath = path.join(this.workspaceFolder, workspace); // Get the workspace path
 
             if (!fs.existsSync(workspacePath)) { // If the workspace folder does not exist
                 fs.mkdirSync(workspacePath, { recursive: true }); // Create the workspace folder
@@ -158,6 +165,8 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                 }; // Create the workspace
 
                 this.workspaces[workspace].filesystem = loadWorkspace(workspacePath); // Load files from the workspace folder
+
+                console.log(this.workspaces[workspace].filesystem); // Log the loaded files
             }
 
             socket.emit("workspace", this.workspaces[workspace]); // Send the workspace to the user

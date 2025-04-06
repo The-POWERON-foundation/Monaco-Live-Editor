@@ -23,8 +23,8 @@ require(["vs/editor/editor.main"], () => {
 let editorStyle = document.createElement("style"); 
 editorStyle.innerHTML = `
     @font-face {
-        font-family: Monaco;
-        src: url(/monaco-live-editor/monaco.ttf);
+        font-family: IBM Plex Sans;
+        src: url(/monaco-live-editor/ibm-plex-sans.ttf);
     }
     
     .user-widget {
@@ -52,8 +52,15 @@ editorStyle.innerHTML = `
 
     .file {
         color: white; 
-        font-family: Monaco; 
+        font-family: IBM Plex Sans; 
+
         padding: 0.5em; 
+        padding-top: 0.25em; 
+        padding-bottom: 0.25em;
+
+        margin: 0.1em; 
+        border-radius: 0.25em;
+
         cursor: pointer; 
         white-space: nowrap;
     }
@@ -74,7 +81,52 @@ document.head.appendChild(editorStyle);
 function updateFilesystem(element, filesystem) {
     element.innerHTML = ""; // Clear the filesystem
 
-    for (let file in filesystem) {
+    function sortFilesystem(filesystem) {
+        filesystem.sort((a, b) => {
+            if (a.type == b.type) {
+                return a.name.localeCompare(b.name); // Sort by name
+            } else if (a.type == "directory") {
+                return -1; // Directories first
+            } else {
+                return 1; // Files last
+            }
+        });
+
+        filesystem.forEach((file) => {
+            if (file.children) {
+                file.children = sortFilesystem(file.children); // Sort children
+            }
+        });
+
+        return filesystem;
+    }
+
+    filesystem = sortFilesystem(filesystem); // Sort the filesystem
+
+    filesystem.forEach((file) => {
+        let fileElement = document.createElement("div"); 
+        fileElement.className = "file"; 
+        element.appendChild(fileElement); 
+
+        let fileThumbnail = document.createElement("img");
+
+        switch (file.type) {
+            case "directory":
+                fileThumbnail.src = "/monaco-live-editor/file-thumbnails/directory.svg";
+                break;
+            case "file":
+                fileThumbnail.src = "/monaco-live-editor/file-thumbnails/unknown.svg";
+                break;
+        }
+
+        fileElement.appendChild(fileThumbnail);
+
+        let fileName = document.createElement("span");
+        fileName.innerHTML = file.name;
+        fileElement.appendChild(fileName);
+    }); 
+
+    /*for (let file in filesystem) {
         let fileElement = document.createElement("div"); 
         fileElement.className = "file"; 
         element.appendChild(fileElement); 
@@ -95,7 +147,7 @@ function updateFilesystem(element, filesystem) {
         let fileName = document.createElement("span");
         fileName.innerHTML = file;
         fileElement.appendChild(fileName);
-    }
+    }*/
 }
 
 function MonacoLiveEditor(parentElement) {
