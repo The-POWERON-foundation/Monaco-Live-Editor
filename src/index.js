@@ -165,8 +165,6 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                 }; // Create the workspace
 
                 this.workspaces[workspace].filesystem = loadWorkspace(workspacePath); // Load files from the workspace folder
-
-                console.log(this.workspaces[workspace].filesystem); // Log the loaded files
             }
 
             socket.emit("workspace", this.workspaces[workspace]); // Send the workspace to the user

@@ -57,19 +57,19 @@ editorStyle.innerHTML = `
         padding: 0.5em; 
         padding-top: 0.25em; 
         padding-bottom: 0.25em;
-
-        margin: 0.1em; 
         border-radius: 0.25em;
 
         cursor: pointer; 
         white-space: nowrap;
+
+        color: rgb(220, 220, 220);
     }
 
     .file img {
         width: 1em; 
         aspect-ratio: 1 / 1; 
         margin-right: 0.5em; 
-        vertical-align: -0.2em; 
+        vertical-align: -0.15em; 
     }
 
     .file:hover {
@@ -125,29 +125,6 @@ function updateFilesystem(element, filesystem) {
         fileName.innerHTML = file.name;
         fileElement.appendChild(fileName);
     }); 
-
-    /*for (let file in filesystem) {
-        let fileElement = document.createElement("div"); 
-        fileElement.className = "file"; 
-        element.appendChild(fileElement); 
-
-        let fileThumbnail = document.createElement("img");
-
-        switch (filesystem[file].type) {
-            case "directory":
-                fileThumbnail.src = "/monaco-live-editor/file-thumbnails/directory.svg";
-                break;
-            case "file":
-                fileThumbnail.src = "/monaco-live-editor/file-thumbnails/unknown.svg";
-                break;
-        }
-
-        fileElement.appendChild(fileThumbnail);
-
-        let fileName = document.createElement("span");
-        fileName.innerHTML = file;
-        fileElement.appendChild(fileName);
-    }*/
 }
 
 function MonacoLiveEditor(parentElement) {
@@ -201,7 +178,10 @@ function MonacoLiveEditor(parentElement) {
         display: none;
         flex-direction: column;
         border-right: 1px solid rgb(100, 100, 100);
-        height: 100%;
+        padding: 0.5em; 
+
+        min-width: 200px;
+        height: calc(100% - 1em);
     `;
     this.element.appendChild(this.filesystem);
 
