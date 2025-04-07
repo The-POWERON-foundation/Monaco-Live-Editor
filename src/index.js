@@ -81,6 +81,22 @@ function loadWorkspace(workspacePath) {
     return filesystem; // Return the loaded files
 }
 
+function saveWorkspace(workspacePath, workspace) {
+    for (let i = 0; i < workspace.length; i ++) { // Loop through the workspace files
+        let file = workspace[i]; // Get the file
+        let filePath = path.join(workspacePath, file.name); // Get the file path
+
+        if (file.type === "directory") { // If the file is a directory
+            fs.mkdirSync(filePath, { recursive: true }); // Create the directory
+            saveWorkspace(filePath, file.children); // Recursively save the directory
+        } else if (file.type === "file") { // If the file is a file
+            fs.writeFileSync(filePath, file.content || ""); // Write the file content
+        } else if (file.type === "symlink") { // If the file is a symbolic link
+            fs.symlinkSync(file.target, filePath); // Create the symbolic link
+        }
+    }
+}
+
 function MonacoLiveEditor() {
     this.expressServer = null; // Store the express server instance
     this.httpServer = null; // Store the HTTP server instance
@@ -173,7 +189,8 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                 id: socket.variables.userID, 
                 color: this.colors[Math.floor(Math.random() * this.colors.length)], 
                 selection: {}, 
-                secondarySelections: []  // Secondary selections for multi-cursor support
+                secondarySelections: [],  // Secondary selections for multi-cursor support
+                openFile: null, // The file the user is currently editing
             }; // Add the user to the workspace
             socket.variables.workspace = workspace; // Store the workspace in the socket
 
@@ -190,7 +207,8 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                 delete this.workspaces[socket.variables.workspace].users[socket.variables.userID]; // Delete the user from the workspace
 
                 if (Object.keys(this.workspaces[socket.variables.workspace].users).length == 0) { // If there are no users left in the workspace
-                    fs.writeFileSync(path.join(this.workspaceFolder, socket.variables.workspace), this.workspaces[socket.variables.workspace].text); // Save the workspace
+                    //fs.writeFileSync(path.join(this.workspaceFolder, socket.variables.workspace), this.workspaces[socket.variables.workspace].text); // Save the workspace
+                    saveWorkspace(path.join(this.workspaceFolder, socket.variables.workspace), this.workspaces[socket.variables.workspace].filesystem); // Save the workspace
                     if (this.showLog) console.log(`MonacoLiveEditor: Workspace ${socket.variables.workspace} saved and closed`);
                     delete this.workspaces[socket.variables.workspace]; // Delete the workspace
                 }
