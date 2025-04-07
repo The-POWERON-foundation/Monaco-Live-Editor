@@ -108,7 +108,7 @@ editorStyle.innerHTML = `
 `; 
 document.head.appendChild(editorStyle); 
 
-function updateDirectoryChildren(element, children, isRoot = false) {
+function updateDirectoryChildren(element, children, isRoot = false, socket) {
     element.innerHTML = ""; // Clear the children
 
     children.forEach((node) => {
@@ -135,11 +135,11 @@ function updateDirectoryChildren(element, children, isRoot = false) {
         selfNodeElement.className = "node";
         nodeElement.appendChild(selfNodeElement);
 
-        if (node.type == "directory") {
+        if (node.type === "directory") {
             let children = document.createElement("div");
             children.className = "directory-children";
             children.style.display = "none"; // Hide the children by default
-            updateDirectoryChildren(children, node.children); // Update the children of the directory
+            updateDirectoryChildren(children, node.children, false, socket); // Update the children of the directory
             nodeElement.appendChild(children);
 
             nodeElement.addEventListener("click", (e) => {
@@ -153,6 +153,18 @@ function updateDirectoryChildren(element, children, isRoot = false) {
                     children.style.display = "none"; // Hide the children
                 }
             }); // Add click event to toggle children
+        }
+        else if (node.type === "file") {
+            nodeElement.addEventListener("click", (e) => {
+                e.stopPropagation(); // Prevent the click event from bubbling up to the parent element
+
+                socket.emit("open-file", node.path); // Emit the open-file event to the server
+            }); // Add click event to open file
+        }
+        else {
+            nodeElement.addEventListener("click", (e) => {
+                e.stopPropagation(); // Prevent the click event from bubbling up to the parent element
+            }); // Add click event to prevent default behavior
         }
 
         let nodeThumbnail = document.createElement("img");
@@ -174,7 +186,7 @@ function updateDirectoryChildren(element, children, isRoot = false) {
     }); 
 }
 
-function updateFilesystem(element, filesystem) {
+function updateFilesystem(element, filesystem, socket) {
     element.innerHTML = ""; // Clear the filesystem
 
     function sortFilesystem(filesystem) {
@@ -199,7 +211,7 @@ function updateFilesystem(element, filesystem) {
 
     filesystem = sortFilesystem(filesystem); // Sort the filesystem
 
-    updateDirectoryChildren(element, filesystem, true); // Update the filesystem
+    updateDirectoryChildren(element, filesystem, true, socket); // Update the filesystem
 }
 
 function MonacoLiveEditor(parentElement) {
@@ -283,18 +295,23 @@ function MonacoLiveEditor(parentElement) {
         this.filesystem.style.display = "flex";
         this.monacoEditor.style.display = ""; 
 
-        updateFilesystem(this.filesystem, data.filesystem); // Update the filesystem
+        updateFilesystem(this.filesystem, data.filesystem, this.socket); // Update the filesystem
 
         this.editor.layout(); 
 
-        this.blockChange = true; // Prevent text change events from triggering the socket.io event
-        this.editor.setValue(data.text); // Set the editor value
+        /* this.blockChange = true; // Prevent text change events from triggering the socket.io event
+        this.editor.setValue(data.text); // Set the editor value */
 
         for (let userID in data.users) {
             let user = data.users[userID];
             this.userJoin(user);
         };
     });
+
+    this.socket.on("file-opened", (data) => {
+        this.blockChange = true; // Prevent text change events from triggering the socket.io event
+        this.editor.setValue(data.content); // Set the editor value
+    }); 
 
     this.socket.on("user-joined", (user) => {
         this.userJoin(user); // Add the new user to the editor

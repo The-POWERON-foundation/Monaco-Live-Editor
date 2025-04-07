@@ -35,19 +35,20 @@ function isValidFilename(workspaceFolder, filename) {
     return resolvedPath.startsWith(workspaceFolder); // Prevent directory traversal
 }
 
-function loadWorkspace(workspacePath) {
+function loadWorkspace(workspacePath, additionalPath) {
     let filesystem = []; // Store files in the workspace
 
-    fs.readdirSync(workspacePath).forEach((file) => {
-        let filePath = path.join(workspacePath, file); // Get the file path
-        let fileStat = fs.lstatSync(filePath); // Get the file stats
+    fs.readdirSync(path.join(workspacePath, additionalPath)).forEach((file) => {
+        let filePathFull = path.join(workspacePath, additionalPath, file); // Get the file path
+        let fileStat = fs.lstatSync(filePathFull); // Get the file stats
+        let filePath = path.join(additionalPath, file); // Get the file path relative to the workspace
 
         if (fileStat.isDirectory()) { // If the file is a directory
             filesystem.push({ // Create a directory object
                 name: file, // Set the file name
                 type: "directory", // Set the file type to directory
                 path: filePath, // Set the file path
-                children: loadWorkspace(filePath) // Recursively load the directory
+                children: loadWorkspace(workspacePath, filePath) // Recursively load the directory
             });
         }
 
@@ -56,7 +57,7 @@ function loadWorkspace(workspacePath) {
                 name: file, // Set the file name
                 type: "file", // Set the file type to file
                 path: filePath, // Set the file path
-                content: fs.readFileSync(filePath, "utf-8") // Read the file content
+                content: fs.readFileSync(filePathFull, "utf-8") // Read the file content
             });
         }
 
@@ -180,7 +181,7 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                     lastSave: Date.now()
                 }; // Create the workspace
 
-                this.workspaces[workspace].filesystem = loadWorkspace(workspacePath); // Load files from the workspace folder
+                this.workspaces[workspace].filesystem = loadWorkspace(workspacePath, ""); // Load files from the workspace folder
             }
 
             socket.emit("workspace", this.workspaces[workspace]); // Send the workspace to the user
@@ -196,6 +197,36 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
 
             this.io.to(workspace).emit("user-joined", this.workspaces[workspace].users[socket.variables.userID]); // Send the user-joined event to all users in the workspace
             socket.join(workspace); // Join the workspace room
+        });
+
+        socket.on("open-file", (path) => {
+            path = path.replace(/\\/g, "/"); // Normalize the path to use forward slashes
+            let pathSplited = path.split("/"); // Split the path by slashes
+
+            function findFile(filesystem, pathSplited) {
+                let file = filesystem.find((file) => file.name === pathSplited[0]); // Find the file in the filesystem
+
+                if (!file) return null; // If the file is not found, return null
+
+                if (pathSplited.length === 1) { // If the path has only one element
+                    return file; // Return the file
+                } else if (file.type === "directory") { // If the file is a directory
+                    return findFile(file.children, pathSplited.slice(1)); // Recursively search in the directory
+                } else {
+                    return null; // If the file is not a directory, return null
+                }
+            }
+
+            let file = findFile(this.workspaces[socket.variables.workspace].filesystem, pathSplited); // Find the file in the workspace
+            
+            if (!file) { // If the file is not found
+                socket.emit("error", "File not found"); // Send error message to the user
+                return; // Exit the function
+            }
+            else {
+                this.workspaces[socket.variables.workspace].users[socket.variables.userID].openFile = path; // Set the open file for the user
+                socket.emit("file-opened", file); // Send the opened file to the user
+            }
         });
 
         socket.on("disconnect", () => {
