@@ -11,6 +11,7 @@ expressServer.use(express.static(path.join(__dirname, "public"))); // Serve stat
 let editor = new MonacoLiveEditor(); 
 editor.setShowLog(true); // Show log
 editor.setWorkspaceFolder(path.resolve(__dirname, "workspace")); 
+editor.setTemplateFolder(path.resolve(__dirname, "template"));
 editor.startServer(expressServer, httpServer); 
 
 httpServer.listen(80); 

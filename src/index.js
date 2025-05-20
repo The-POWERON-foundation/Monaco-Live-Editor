@@ -88,6 +88,7 @@ function MonacoLiveEditor() {
     this.expressServer = null; // Store the express server instance
     this.httpServer = null; // Store the HTTP server instance
     this.workspaceFolder = null; // Set the workspace folder
+    this.templateFolder = null; // Set the template folder
 
     this.userID = 0; // Increment this for each new user
     this.workspaces = {}; // Store the workspace data
@@ -113,6 +114,10 @@ function MonacoLiveEditor() {
 
 MonacoLiveEditor.prototype.setWorkspaceFolder = function(path) {
     this.workspaceFolder = path;
+}
+
+MonacoLiveEditor.prototype.setTemplateFolder = function(path) {
+    this.templateFolder = path; // Set the template folder
 }
 
 MonacoLiveEditor.prototype.setShowLog = function(showLog) {
@@ -170,7 +175,18 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
 
             if (!fs.existsSync(workspacePath)) { // If the workspace folder does not exist
                 fs.mkdirSync(workspacePath, { recursive: true }); // Create the workspace folder
-                fs.writeFileSync(path.join(workspacePath, "README.md"), "# Welcome to your new workspace!\n\nThis is a README file for your new workspace."); // Create a README file
+                // fs.writeFileSync(path.join(workspacePath, "README.md"), "# Welcome to your new workspace!\n\nThis is a README file for your new workspace."); // Create a README file
+                
+                if (fs.existsSync(this.templateFolder)) { // If the template folder exists
+                    /* Copy the template folder to the workspace */
+                    fs.cpSync(this.templateFolder, workspacePath, { recursive: true }, (err) => { // Copy the template folder to the workspace
+                        if (err) {
+                            socket.emit("error", "Error copying template folder"); // Send error message to the user
+                            return; // Exit the function
+                        }
+                    });
+                }
+
                 if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} created workspace ${workspace}`);
             }
             else {
