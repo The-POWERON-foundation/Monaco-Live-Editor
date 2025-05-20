@@ -1,3 +1,43 @@
+const LANGUAGES = {
+    "js": "javascript",
+    "ts": "typescript",
+    "py": "python",
+    "java": "java",
+    "c": "c",
+    "cpp": "cpp",
+    "cs": "csharp",
+    "rb": "ruby",
+    "go": "go",
+    "php": "php",
+    "html": "html",
+    "css": "css",
+    "scss": "scss",
+    "less": "less",
+    "json": "json",
+    "xml": "xml",
+    "yaml": "yaml",
+    "md": "markdown",
+    "sh": "shell",
+    "bat": "bat",
+    "ps1": "powershell",
+    "sql": "sql",
+    "r": "r",
+    "swift": "swift",
+    "kt": "kotlin",
+    "dart": "dart",
+    "lua": "lua",
+    "scala": "scala",
+    "rs": "rust",
+    "pl": "perl",
+    "vb": "vb",
+    "coffee": "coffeescript",
+    "dockerfile": "dockerfile",
+    "makefile": "makefile",
+    "ini": "ini",
+    "tex": "latex",
+    "txt": "plaintext"
+};   
+
 /* Load Monaco Editor */
 require.config({
     paths: {
@@ -307,9 +347,15 @@ function MonacoLiveEditor(parentElement) {
         };
     });
 
-    this.socket.on("file-opened", (data) => {
+    this.socket.on("file-opened", (file) => {
         this.blockChange = true; // Prevent text change events from triggering the socket.io event
-        this.editor.setValue(data.content); // Set the editor value
+
+        let extension = file.name.split(".").pop(); // Get the file extension
+        let language = LANGUAGES[extension] || "plaintext"; // Get the file extension
+
+        window.monaco.editor.setModelLanguage(this.editor.getModel(), language); // Set the language of the editor
+
+        this.editor.setValue(file.content); // Set the editor value
     }); 
 
     this.socket.on("user-joined", (user) => {
