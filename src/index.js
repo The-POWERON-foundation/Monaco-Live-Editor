@@ -2,6 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const socketIO = require("socket.io");
 const express = require("express");
+const process = require("process");
+
+const root = process.cwd(); // Get the current working directory
 
 function isValidWorkspaceName(workspaceFolder, workspaceName) {
     if (!workspaceName) return false; // Reject empty filenames
@@ -143,7 +146,13 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
     this.httpServer = httpServer; 
 
     this.io = socketIO(this.httpServer); // Initialize Socket.IO with the server
-    this.expressServer.use("/monaco-editor", express.static(path.join(__dirname, "../node_modules/monaco-editor"))); // Serve Monaco Editor files
+
+    if (fs.existsSync(path.join(root, "/node_modules/monaco-editor"))) {
+        this.expressServer.use("/monaco-editor", express.static(path.join(root, "/node_modules/monaco-editor"))); // Serve Monaco Editor files
+    } else {
+        this.expressServer.use("/monaco-editor", express.static(path.join(__dirname, "../node_modules/monaco-editor"))); // Serve Monaco Editor files
+    }
+
     this.expressServer.use("/monaco-live-editor", express.static(path.join(__dirname, "public"))); // Serve monaco-live-editor files
 
     if (this.showLog) console.log("MonacoLiveEditor: Server started"); // Log server start
