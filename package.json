@@ -1,6 +1,6 @@
 {
   "name": "monaco-live-editor",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "Monaco Live Editor is an extension for the web-based Monaco editor that allows real-time code collaboration.",
   "main": "src/index.js",
   "repository": {
