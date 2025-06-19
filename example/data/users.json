@@ -1,0 +1,14 @@
+{
+    "test1": {
+        "name": "Test User 1",
+        "password": "test1", 
+        "image": "images/test1.png",
+        "color": [ 255, 0, 0 ]
+    }, 
+    "test2": {
+        "name": "Test User 2",
+        "password": "test2", 
+        "image": "images/test2.png",
+        "color": [ 0, 255, 0 ]
+    }
+}
