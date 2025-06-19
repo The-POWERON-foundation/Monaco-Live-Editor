@@ -372,6 +372,13 @@ function MonacoLiveEditor(parentElement) {
     this.socket.on('disconnect', function() {
         this.socket.reconnect();
     }); 
+
+    this.socket.on("custom-event", (data) => {
+        let eventName = data.eventName;
+        let params = data.params;
+
+        this.onReceiveCustomEvent(eventName, params); // Handle custom events
+    }); 
     
     /* Initialize the editor */
     this.monacoScriptLoadInterval = setInterval(() => {
@@ -442,6 +449,14 @@ MonacoLiveEditor.prototype.joinWorkspace = function(workspace) {
             this.socket.emit("join", { workspace }); // Join the workspace
         }
     }, 0); 
+}
+
+MonacoLiveEditor.prototype.sendCustomEvent = function(eventName, params) {
+    this.socket.emit("custom-event", { eventName, params }); // Emit custom event to the server
+}
+
+MonacoLiveEditor.prototype.onReceiveCustomEvent = function(eventName, params) {
+    /** Handles custom events */
 }
 
 MonacoLiveEditor.prototype.onError = function(error) {}

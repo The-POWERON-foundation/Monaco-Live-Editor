@@ -137,6 +137,23 @@ MonacoLiveEditor.prototype.requestConnect = function(params) {
     return true; // Allow all users to join the workspace by default
 }
 
+MonacoLiveEditor.prototype.onReceiveCustomEvent = function(socket, eventName, params) {
+    /**
+     * This function is called when a custom event is emitted by the user.
+     * The eventName is the name of the event, and params is an object with the parameters of the event.
+     * You can use this function to handle custom events in your application (for example login)
+     */
+}
+
+MonacoLiveEditor.prototype.sendCustomEvent = function(socket, eventName, params) {
+    socket.emit("custom-event", { // Send a custom event to the user
+        eventName: eventName, // Set the event name
+        params: params // Set the parameters of the event
+    });
+    
+    if (this.showLog) console.log(`MonacoLiveEditor: Sent custom event ${eventName} to user ${socket.variables.userID}`, params); // Log the event
+}
+
 MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
     if (!this.workspaceFolder) {
         throw "Must set workspace folder before starting server"; 
@@ -267,6 +284,15 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                     delete this.workspaces[socket.variables.workspace]; // Delete the workspace
                 }
             }
+        }); 
+
+        socket.on("custom-event", (data) => {
+            let eventName = data.eventName; // Get the event name from the data
+            let params = data.params || {}; // Get the parameters from the data, or an empty object if not provided
+
+            if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} emitted event ${eventName}`, params); // Log the event
+
+            this.onReceiveCustomEvent(socket, eventName, params); // Call the custom event handler
         }); 
     }); 
 }
