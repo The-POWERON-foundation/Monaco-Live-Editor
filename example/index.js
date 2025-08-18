@@ -31,4 +31,6 @@ editor.onReceiveCustomEvent = function(socket, eventName, params) {
 
 editor.startServer(expressServer, httpServer); 
 
-httpServer.listen(80); 
+httpServer.listen(3000, () => {
+    console.log("Server is running on http://localhost:3000");
+}); 
