@@ -369,10 +369,6 @@ function MonacoLiveEditor(parentElement) {
         delete this.users[userID];
     });
 
-    this.socket.on('disconnect', function() {
-        this.socket.reconnect();
-    }); 
-
     this.socket.on("custom-event", (data) => {
         let eventName = data.eventName;
         let params = data.params;
@@ -449,6 +445,10 @@ MonacoLiveEditor.prototype.joinWorkspace = function(workspace) {
             this.socket.emit("join", { workspace }); // Join the workspace
         }
     }, 0); 
+}
+
+MonacoLiveEditor.prototype.saveWorkspace = function() {
+    this.socket.emit("save-workspace"); // Emit save workspace event to the server
 }
 
 MonacoLiveEditor.prototype.sendCustomEvent = function(eventName, params) {

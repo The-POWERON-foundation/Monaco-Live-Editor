@@ -270,6 +270,17 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
             }
         });
 
+        socket.on("save-workspace", () => {
+            if (!socket.variables.workspace) {
+                socket.emit("error", "You are not in a workspace"); // Send error message to the user
+                return; // Exit the function
+            }
+
+            if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} saved workspace ${socket.variables.workspace}`); // Log the save event
+
+            saveWorkspace(path.join(this.workspaceFolder, socket.variables.workspace), this.workspaces[socket.variables.workspace].filesystem); // Save the workspace
+        }); 
+
         socket.on("disconnect", () => {
             if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} disconnected`);
 
@@ -290,7 +301,7 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
             let eventName = data.eventName; // Get the event name from the data
             let params = data.params || {}; // Get the parameters from the data, or an empty object if not provided
 
-            if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} emitted event ${eventName}`, params); // Log the event
+            if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} emitted custom event ${eventName}`, params); // Log the event
 
             this.onReceiveCustomEvent(socket, eventName, params); // Call the custom event handler
         }); 

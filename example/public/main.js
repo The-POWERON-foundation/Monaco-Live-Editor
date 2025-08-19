@@ -25,7 +25,18 @@ function onLoad() {
 
         editor.onReceiveCustomEvent = (eventName, params) => {
             if (eventName === "login-fail") {
-                alert("Login failed! Please check your username and password."); 
+                alert("Login failed! Please check your username and password or try logging in as a guest (no password)."); 
+                location.reload();
+                return; 
+            }
+
+            if (eventName === "login-success") {
+                document.getElementById("taskbar").style.display = ""; // Show taskbar
+
+                document.getElementById("image").src = params.image;
+                document.getElementById("name").textContent = params.name;
+                document.getElementById("name").style.color = `rgb(${params.color.join(",")})`;
+                document.getElementById("rights").textContent = params.rights;
             }
         };
 
