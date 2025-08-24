@@ -261,12 +261,27 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                 return; // Exit the function
             }
             else {
+                if (socket.variables.currentFile) {
+                    /* Disconnect from the previous file room */
+                    socket.leave("Workspace " + socket.variables.workspace + " - File " + socket.variables.currentFile.path);
+                    this.io.to("Workspace " + socket.variables.workspace).emit("user-left-file", socket.variables.userID); // Send the user-left-file event to all users in the workspace
+                    if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} closed file ${socket.variables.currentFile.path} in workspace ${socket.variables.workspace}`);
+                
+                    /* Remove the user's ID from the previous file */
+                    const index = socket.variables.currentFile.users.indexOf(socket.variables.userID);
+                    if (index > -1) {
+                        socket.variables.currentFile.users.splice(index, 1); // Remove the user from the file
+                    }
+                }
+                
                 file.users.push(socket.variables.userID); // Add the user to the file
                 socket.emit("file-opened", file); // Send the opened file to the user
+                socket.variables.currentFile = file; // Store the current file in the socket
 
+                /* Join the file room */
                 socket.join(["Workspace " + socket.variables.workspace, "Workspace " + socket.variables.workspace + " - File " + file.path]); // Join the file room
-                this.io.to("Workspace " + socket.variables.workspace + " - File " + file.path).emit("user-joined-file", socket.variables.userID); // Send the user-joined-file event to all users in the file room
                 this.io.to("Workspace " + socket.variables.workspace).emit("user-joined-file", socket.variables.userID); // Send the user-joined-file event to all users in the workspace
+                if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} opened file ${file.path} in workspace ${socket.variables.workspace}`);
             }
         });
 
