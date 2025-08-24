@@ -315,6 +315,33 @@ function MonacoLiveEditor(parentElement) {
     `;
     this.element.appendChild(this.filesystem);
 
+    this.editorContainer = document.createElement("div"); 
+    this.editorContainer.style = `
+        display: flex; 
+        flex-direction: column; 
+        height: 100%; 
+        flex: 1; 
+        display: none;  
+        min-width: 0; /* Prevent overflow */
+    `; 
+    this.element.appendChild(this.editorContainer);
+
+    /* TODO: Hotbar for quick file access */
+    /* this.hotbar = document.createElement("div"); 
+    this.hotbar.style = `
+        height: 2.5em; 
+        background: rgb(0, 0, 80); 
+
+        color: rgb(220, 220, 255); 
+        font-size: 0.9em;
+
+        display: flex; 
+        align-items: center; 
+
+        user-select: none;
+    `;
+    this.editorContainer.appendChild(this.hotbar); */
+
     this.monacoEditor = document.createElement("div"); 
     this.monacoEditor.style = `
         flex: 1; 
@@ -323,10 +350,9 @@ function MonacoLiveEditor(parentElement) {
         display: flex; 
         align-items: center; 
         justify-content: center; 
-        display: none;  
         min-width: 0; /* Prevent overflow */
     `; 
-    this.element.appendChild(this.monacoEditor); 
+    this.editorContainer.appendChild(this.monacoEditor); 
 
     this.socket.on("error", (error) => {
         this.onError(error); 
@@ -335,7 +361,7 @@ function MonacoLiveEditor(parentElement) {
     this.socket.on("workspace", (data) => {
         this.loading.style.display = "none"; 
         this.filesystem.style.display = "flex";
-        this.monacoEditor.style.display = ""; 
+        this.editorContainer.style.display = ""; 
 
         updateFilesystem(this.filesystem, data.filesystem, this.socket); // Update the filesystem
 

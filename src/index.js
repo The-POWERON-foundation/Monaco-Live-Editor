@@ -264,8 +264,8 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                 file.users.push(socket.variables.userID); // Add the user to the file
                 socket.emit("file-opened", file); // Send the opened file to the user
 
-                socket.join(["Workspace " + socket.variables.workspace, "File " + file.path]); // Join the file room
-                this.io.to("File " + file.path).emit("user-joined-file", socket.variables.userID); // Send the user-joined-file event to all users in the file room
+                socket.join(["Workspace " + socket.variables.workspace, "Workspace " + socket.variables.workspace + " - File " + file.path]); // Join the file room
+                this.io.to("Workspace " + socket.variables.workspace + " - File " + file.path).emit("user-joined-file", socket.variables.userID); // Send the user-joined-file event to all users in the file room
                 this.io.to("Workspace " + socket.variables.workspace).emit("user-joined-file", socket.variables.userID); // Send the user-joined-file event to all users in the workspace
             }
         });
