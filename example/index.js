@@ -28,18 +28,22 @@ editor.onReceiveCustomEvent = function(socket, eventName, params) {
                     name: userData.guest.name,
                     image: userData.guest.image,
                     color: userData.guest.color,
-                    rights: userData.guest.rights
+                    writePermission: userData.guest.writePermission
                 }
             );
+
+            socket.variables.writePermission = userData.guest.writePermission; // Store whether the user has write permission
         } else if (userData[username] && userData[username].password === password) {
             editor.sendCustomEvent(socket, "login-success", 
                 { 
                     name: userData[username].name, 
                     image: userData[username].image, 
                     color: userData[username].color, 
-                    rights: userData[username].rights
+                    writePermission: userData[username].writePermission
                 }
             );
+
+            socket.variables.writePermission = userData[username].writePermission; // Store whether the user has write permission
         } else {
             editor.sendCustomEvent(socket, "login-fail");
         }

@@ -179,6 +179,7 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
 
         socket.variables = {}; // Create a variables object in the socket
         socket.variables.userID = this.userID; // Store the user ID in the socket
+        socket.variables.writePermission = false; // Store whether the user has write permission, false by default
         
         socket.emit("connected"); // Send connected event to the user
         this.userID ++; // Increment the user ID 
@@ -288,6 +289,11 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
         socket.on("save-workspace", () => {
             if (!socket.variables.workspace) {
                 socket.emit("error", "You are not in a workspace"); // Send error message to the user
+                return; // Exit the function
+            }
+
+            if (!socket.variables.writePermission) {
+                socket.emit("error", "You don't have write permission"); // Send error message to the user
                 return; // Exit the function
             }
 

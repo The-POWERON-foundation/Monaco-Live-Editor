@@ -4,20 +4,20 @@
         "password": "test1", 
         "image": "images/test1.png",
         "color": [ 255, 0, 0 ], 
-        "rights": "full"
+        "writePermission": true
     }, 
     "test2": {
         "name": "Test User 2",
         "password": "test2", 
         "image": "images/test2.png",
         "color": [ 0, 255, 0 ], 
-        "rights": "read"
+        "writePermission": false
     }, 
     "guest": {
         "name": "Guest",
         "password": "", 
         "image": "images/guest.png",
         "color": [ 200, 200, 200 ], 
-        "rights": "read"
+        "writePermission": false
     }
 }

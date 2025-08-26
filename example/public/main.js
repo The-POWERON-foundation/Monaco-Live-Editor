@@ -36,7 +36,7 @@ function onLoad() {
                 document.getElementById("image").src = params.image;
                 document.getElementById("name").textContent = params.name;
                 document.getElementById("name").style.color = `rgb(${params.color.join(",")})`;
-                document.getElementById("rights").textContent = params.rights;
+                document.getElementById("rights").textContent = params.writePermission ? "full" : "read";
             }
         };
 
