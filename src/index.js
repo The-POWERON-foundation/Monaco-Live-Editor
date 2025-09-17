@@ -6,23 +6,6 @@ const process = require("process");
 
 const root = process.cwd(); // Get the current working directory
 
-function isValidWorkspaceName(workspaceFolder, workspaceName) {
-    if (!workspaceName) return false; // Reject empty filenames
-    if (workspaceName.length > 255) return false; // Reject workspace names longer than 255 characters
-
-    const safePattern = /^[a-zA-Z0-9_/.-]+$/; // Allow letters, numbers, -, _ and /
-    if (!safePattern.test(workspaceName)) {
-        console.log("Rejected safe pattern"); 
-        return false; // Reject workspace names with special characters or spaces
-    }
-
-    // Normalize and check if the resolved path stays inside the allowed directory
-    const safeDirectory = path.resolve(workspaceFolder); 
-    const resolvedPath = path.resolve(safeDirectory, workspaceName);
-
-    return resolvedPath.startsWith(safeDirectory); // Prevent directory traversal
-}
-
 function loadWorkspace(workspacePath, additionalPath) {
     let filesystem = []; // Store files in the workspace
 
@@ -187,12 +170,6 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
         socket.on("join", (params) => {
             let workspace = params.workspace; // Get the workspace name from the parameters
 
-            /* Sanitize workspace name */
-            if (!isValidWorkspaceName(this.workspaceFolder, workspace)) { // If the workspace name is not valid
-                socket.emit("error", "Invalid workspace name"); // Send error message to the user
-                return; // Exit the function
-            }
-
             if (this.requestConnect(params) === false) { // If the user is not allowed to join the workspace
                 socket.emit("error", "Access denied"); // Send error message to the user
                 return; // Exit the function
@@ -200,25 +177,7 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
 
             let workspacePath = path.join(this.workspaceFolder, workspace); // Get the workspace path
 
-            if (!fs.existsSync(workspacePath)) { // If the workspace folder does not exist
-                fs.mkdirSync(workspacePath, { recursive: true }); // Create the workspace folder
-                // fs.writeFileSync(path.join(workspacePath, "README.md"), "# Welcome to your new workspace!\n\nThis is a README file for your new workspace."); // Create a README file
-                
-                if (fs.existsSync(this.templateFolder)) { // If the template folder exists
-                    /* Copy the template folder to the workspace */
-                    fs.cpSync(this.templateFolder, workspacePath, { recursive: true }, (err) => { // Copy the template folder to the workspace
-                        if (err) {
-                            socket.emit("error", "Error copying template folder"); // Send error message to the user
-                            return; // Exit the function
-                        }
-                    });
-                }
-
-                if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} created workspace ${workspace}`);
-            }
-            else {
-                if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} joined workspace ${workspace}`);
-            }
+            if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} joined workspace ${workspace}`);
 
             if (!this.workspaces[workspace]) { // If the workspace does not exist
                 this.workspaces[workspace] = {
