@@ -16,7 +16,7 @@
 ## Hosting
 1. `npm i monaco-live-editor`
 2. Run example script: `node node_modules/monaco-live-editor/example/index.js`
-3. Open `http://localhost/`
+3. Open `http://localhost:3000/`
 
 ## Example
 The example script can be found under the `example` folder. 
