@@ -13,4 +13,4 @@ editor.setShowLog(true); // Show log
 editor.setWorkspaceFolder(path.resolve(__dirname, "workspace")); 
 editor.startServer(expressServer, httpServer); 
 
-httpServer.listen(80); 
+httpServer.listen(3000); 
