@@ -26,10 +26,11 @@
   },
   "homepage": "https://github.com/The-POWERON-foundation/Monaco-Live-Editor#readme",
   "dependencies": {
-    "express": "^5.1.0",
-    "fs": "^0.0.1-security",
-    "monaco-editor": "^0.52.2",
-    "path": "^0.12.7",
-    "socket.io": "^4.8.1"
+    "express": "5.1.0",
+    "fs": "0.0.1-security",
+    "monaco-editor": "0.52.2",
+    "path": "0.12.7",
+    "process": "0.11.10",
+    "socket.io": "4.8.1"
   }
 }
