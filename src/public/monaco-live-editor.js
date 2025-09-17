@@ -153,10 +153,6 @@ function MonacoLiveEditor(parentElement) {
         this.blockChange = true; // Prevent text change events from triggering the socket.io event
         this.editor.getModel().applyEdits(data.changes); // Apply the text changes
     });
-
-    this.socket.on('disconnect', function() {
-        this.socket.reconnect();
-    }); 
     
     /* Initialize the editor */
     this.monacoScriptLoadInterval = setInterval(() => {
