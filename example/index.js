@@ -13,7 +13,7 @@ editor.setShowLog(true); // Show log
 editor.setWorkspaceFolder(path.resolve(__dirname, "workspace")); 
 editor.startServer(expressServer, httpServer); 
 
-editor.authenticate = (token, callback) => {
+editor.authenticate = (token, workspace, callback) => {
     if (token === "1234") {
         callback(true);
     } else {

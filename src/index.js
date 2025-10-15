@@ -57,7 +57,7 @@ MonacoLiveEditor.prototype.setShowLog = function(showLog) {
     this.showLog = showLog; // Set whether to show log messages
 }
 
-MonacoLiveEditor.prototype.authenticate = function(token, callback) {
+MonacoLiveEditor.prototype.authenticate = function(token, workspace, callback) {
     // Authentication handler - to be replaced with real implementation
 
     callback(true); // By default, always authenticate
@@ -133,7 +133,7 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
         });
 
         socket.on("authenticate", (token) => {
-            this.authenticate(token, (success) => {
+            this.authenticate(token, socket.variables.workspace, (success) => {
                 if (success) {
                     socket.variables.writePermission = true; // Grant write permission
                     socket.emit("authenticated", true); // Send authenticated event to the user
