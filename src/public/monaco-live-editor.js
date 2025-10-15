@@ -153,6 +153,12 @@ function MonacoLiveEditor(parentElement) {
         this.blockChange = true; // Prevent text change events from triggering the socket.io event
         this.editor.getModel().applyEdits(data.changes); // Apply the text changes
     });
+
+    this.socket.on("authenticated", (success) => {
+        if (success) {
+            this.editor.updateOptions({readOnly: false})
+        }
+    }); 
     
     /* Initialize the editor */
     this.monacoScriptLoadInterval = setInterval(() => {
@@ -182,7 +188,8 @@ function MonacoLiveEditor(parentElement) {
             window.monaco.editor.setTheme('default'); 
 
             this.editor = window.monaco.editor.create(this.monacoEditor, {
-                fontSize: 15
+                fontSize: 15, 
+                readOnly: true, // By default, the editor is read-only until authentication
             }); 
 
             this.editor.onDidChangeCursorSelection((e) => {
@@ -220,6 +227,10 @@ MonacoLiveEditor.prototype.joinWorkspace = function(workspace) {
             this.socket.emit("join", workspace); // Join the workspace
         }
     }, 0); 
+}
+
+MonacoLiveEditor.prototype.authenticate = function(token) {
+    this.socket.emit("authenticate", token); // Send authentication token to the server
 }
 
 MonacoLiveEditor.prototype.onError = function(error) {}

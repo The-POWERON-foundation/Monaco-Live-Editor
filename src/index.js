@@ -57,6 +57,12 @@ MonacoLiveEditor.prototype.setShowLog = function(showLog) {
     this.showLog = showLog; // Set whether to show log messages
 }
 
+MonacoLiveEditor.prototype.authenticate = function(token, callback) {
+    // Authentication handler - to be replaced with real implementation
+
+    callback(true); // By default, always authenticate
+}
+
 MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
     if (!this.workspaceFolder) {
         throw "Must set workspace folder before starting server"; 
@@ -82,6 +88,7 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
 
         socket.variables = {}; // Create a variables object in the socket
         socket.variables.userID = this.userID; // Store the user ID in the socket
+        socket.variables.writePermission = false; // By default, users don't have write permission
         
         socket.emit("connected"); // Send connected event to the user
         this.userID ++; // Increment the user ID 
@@ -125,6 +132,19 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
             socket.join(workspace); // Join the workspace room
         });
 
+        socket.on("authenticate", (token) => {
+            this.authenticate(token, (success) => {
+                if (success) {
+                    socket.variables.writePermission = true; // Grant write permission
+                    socket.emit("authenticated", true); // Send authenticated event to the user
+                    if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} authenticated`);
+                } else {
+                    socket.emit("authenticated", false); // Send authenticated event to the user
+                    if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} failed authentication`);
+                }
+            });
+        });
+
         socket.on("disconnect", () => {
             if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} disconnected`);
 
@@ -142,6 +162,8 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
         }); 
 
         socket.on("selection", (data) => {
+            if (!socket.variables.writePermission) return; // Ignore selection updates from users without write permission
+
             if (!data.selection || !data.secondarySelections) return; // Ignore invalid selection data
 
             this.workspaces[socket.variables.workspace].users[socket.variables.userID].selection = data.selection; // Update the user's selection
@@ -155,6 +177,8 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
         }); 
 
         socket.on("text-change", (data) => {
+            if (!socket.variables.writePermission) return; // Ignore text changes from users without write permission
+
             data.changes.forEach((change) => {
                 let start = change.rangeOffset || 0;
                 let end = (change.rangeOffset || 0) + (change.rangeLength || 0);
