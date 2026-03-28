@@ -188,11 +188,6 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
 
             }); // Apply all the changes
 
-            /*if (Date.now() - this.workspaces[socket.variables.workspace].lastSave > SAVE_INTERVAL) { // If the workspace has not been saved in the set interval yet
-                fs.writeFileSync(path.join(__dirname, "..", "files", socket.variables.workspace), this.workspaces[socket.variables.workspace].text); // Save the workspace
-                this.workspaces[socket.variables.workspace].lastSave = Date.now(); // Update the last save time
-            }*/
-
             this.io.to(socket.variables.workspace).except(socket.id).emit("text-change", data); // Send the text change to all users in the
         }); 
     }); 
