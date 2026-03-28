@@ -115,7 +115,7 @@ function MonacoLiveEditor(parentElement) {
     }); 
 
     this.socket.on("workspace", (data) => {
-        this.onWorkspaceJoin(); 
+        this.onJoinWorkspace(); 
 
         this.loading.style.display = "none"; 
         this.monacoEditor.style.display = ""; 
@@ -237,7 +237,7 @@ MonacoLiveEditor.prototype.authenticate = function(token) {
 
 MonacoLiveEditor.prototype.onError = function(error) {}
 
-MonacoLiveEditor.prototype.onWorkspaceJoin = function() {}
+MonacoLiveEditor.prototype.onJoinWorkspace = function() {}
 
 /* New user joins */
 MonacoLiveEditor.prototype.userJoin = function(user) {
