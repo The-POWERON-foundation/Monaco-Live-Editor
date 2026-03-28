@@ -14,6 +14,8 @@ editor.setWorkspaceFolder(path.resolve(__dirname, "workspace"));
 editor.startServer(expressServer, httpServer); 
 
 editor.authenticate = (token, workspace, callback) => {
+    console.log(`User authenticating with token ${token} on workspace ${workspace}`); 
+
     if (token === "1234") {
         callback(true);
     } else {
