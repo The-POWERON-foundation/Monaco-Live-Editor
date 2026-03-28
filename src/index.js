@@ -103,12 +103,11 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
             let filename = path.join(this.workspaceFolder, workspace); // Get the workspace file path
 
             if (!fs.existsSync(filename)) { // If the workspace file does not exist
-                fs.writeFileSync(filename, ""); // Create the workspace file
-                if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} created workspace ${workspace}`);
+                socket.emit("error", "Workspace does not exist");
+                return;
             }
-            else {
-                if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} joined workspace ${workspace}`);
-            }
+                
+            if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} joined workspace ${workspace}`);
 
             if (!this.workspaces[workspace]) { // If the workspace does not exist
                 this.workspaces[workspace] = {
