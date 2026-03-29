@@ -117,17 +117,32 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
                 }; // Create the workspace
             }
 
-            socket.emit("workspace", this.workspaces[workspace]); // Send the workspace to the user
+            let toSend = structuredClone(this.workspaces[workspace]); 
+            /*let usersToSend = toSend.users.filter((user) => {
+                return user.writePermission; // Only include users who have write permission
+            });
+            toSend.users = usersToSend;*/
+
+            const usersToSend = Object.keys(toSend.users)
+                .filter(key => toSend.users[key].writePermission)
+                .reduce((obj, key) => {
+                    obj[key] = toSend.users[key];
+                    return obj;
+                }, {});
+
+            toSend.users = usersToSend;
+
+            socket.emit("workspace", toSend); // Send the workspace to the user
 
             this.workspaces[workspace].users[socket.variables.userID] = {
                 id: socket.variables.userID, 
                 color: this.colors[Math.floor(Math.random() * this.colors.length)], 
                 selection: {}, 
-                secondarySelections: []  // Secondary selections for multi-cursor support
+                secondarySelections: [], // Secondary selections for multi-cursor support
+                writePermission: false
             }; // Add the user to the workspace
             socket.variables.workspace = workspace; // Store the workspace in the socket
 
-            this.io.to(workspace).emit("user-joined", this.workspaces[workspace].users[socket.variables.userID]); // Send the user-joined event to all users in the workspace
             socket.join(workspace); // Join the workspace room
         });
 
@@ -135,7 +150,11 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
             this.authenticate(token, socket.variables.workspace, (success) => {
                 if (success) {
                     socket.variables.writePermission = true; // Grant write permission
+                    this.workspaces[socket.variables.workspace].users[socket.variables.userID].writePermission = true; // Update the workspace info
                     socket.emit("authenticated", true); // Send authenticated event to the user
+
+                    socket.to(socket.variables.workspace).emit("user-joined", this.workspaces[socket.variables.workspace].users[socket.variables.userID]); // Send the user-joined event to all users in the workspace
+
                     if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} authenticated`);
                 } else {
                     socket.emit("authenticated", false); // Send authenticated event to the user
@@ -147,7 +166,9 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
         socket.on("disconnect", () => {
             if (this.showLog) console.log(`MonacoLiveEditor: User ${socket.variables.userID} disconnected`);
 
-            this.io.to(socket.variables.workspace).emit("user-left", socket.variables.userID); // Send the user-left event to all users in the workspace
+            if (socket.variables.writePermission) {
+                this.io.to(socket.variables.workspace).emit("user-left", socket.variables.userID); // Send the user-left event to all users in the workspace
+            }
 
             if (socket.variables.workspace) { // If the user is in a workspace
                 delete this.workspaces[socket.variables.workspace].users[socket.variables.userID]; // Delete the user from the workspace
@@ -164,6 +185,8 @@ MonacoLiveEditor.prototype.startServer = function(expressServer, httpServer) {
             if (!socket.variables.writePermission) return; // Ignore selection updates from users without write permission
 
             if (!data.selection || !data.secondarySelections) return; // Ignore invalid selection data
+
+            if (!socket.variables.writePermission) return; // Ignore selection from users without write permission
 
             this.workspaces[socket.variables.workspace].users[socket.variables.userID].selection = data.selection; // Update the user's selection
             this.workspaces[socket.variables.workspace].users[socket.variables.userID].secondarySelections = data.secondarySelections; // Update the user's secondary selections
